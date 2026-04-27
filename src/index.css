@@ -1,0 +1,53 @@
+/**
+ * SAL Education - College Attendance Management System
+ * Main stylesheet with Tailwind CSS
+ * Color Theme: Blue (#1e40af) + Green (#16a34a) based on SAL Education branding
+ */
+
+@import "tailwindcss";
+
+/* Custom CSS Variables for SAL Education Theme */
+:root {
+  /* Primary Blue - Used for navbar, headers, and primary actions */
+  --sal-blue: #1e40af;
+  --sal-blue-light: #3b82f6;
+  --sal-blue-dark: #1e3a8a;
+  
+  /* Secondary Green - Used for buttons, highlights, and success states */
+  --sal-green: #16a34a;
+  --sal-green-light: #22c55e;
+  --sal-green-dark: #15803d;
+  
+  /* Neutral colors */
+  --sal-white: #ffffff;
+  --sal-gray: #f3f4f6;
+  --sal-text: #1f2937;
+}
+
+/* Base styles */
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--sal-gray);
+  color: var(--sal-text);
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar for better UI */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sal-blue-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sal-blue);
+}
+

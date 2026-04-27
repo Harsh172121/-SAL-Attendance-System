@@ -1,0 +1,4 @@
+name,className,classDepartment,classSemester,description,isActive
+Batch A,CE-5A,Computer Engineering,5,Lab group A,true
+Batch B,CE-5A,Computer Engineering,5,Lab group B,true
+Batch A,IT-5A,Information Technology,5,IT lab group A,true

@@ -1,0 +1,16 @@
+<classes>
+  <class>
+    <name>CE-5A</name>
+    <department>Computer Engineering</department>
+    <semester>5</semester>
+    <academicYear>2025-26</academicYear>
+    <isActive>true</isActive>
+  </class>
+  <class>
+    <name>IT-5A</name>
+    <department>Information Technology</department>
+    <semester>5</semester>
+    <academicYear>2025-26</academicYear>
+    <isActive>true</isActive>
+  </class>
+</classes>

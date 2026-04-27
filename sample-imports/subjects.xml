@@ -1,0 +1,37 @@
+<subjects>
+  <subject>
+    <code>CS501</code>
+    <name>Database Management System</name>
+    <type>theory+lab</type>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <theoryFacultyEmployeeId>SAL-T101</theoryFacultyEmployeeId>
+    <labFacultyEmployeeId>SAL-T102</labFacultyEmployeeId>
+    <credits>4</credits>
+    <isActive>true</isActive>
+  </subject>
+  <subject>
+    <code>CS502</code>
+    <name>Operating Systems</name>
+    <type>theory</type>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <theoryFacultyEmployeeId>SAL-T102</theoryFacultyEmployeeId>
+    <credits>3</credits>
+    <isActive>true</isActive>
+  </subject>
+  <subject>
+    <code>IT501</code>
+    <name>Software Engineering</name>
+    <type>theory+lab</type>
+    <className>IT-5A</className>
+    <classDepartment>Information Technology</classDepartment>
+    <classSemester>5</classSemester>
+    <theoryFacultyEmployeeId>SAL-T201</theoryFacultyEmployeeId>
+    <labFacultyEmployeeId>SAL-T201</labFacultyEmployeeId>
+    <credits>4</credits>
+    <isActive>true</isActive>
+  </subject>
+</subjects>

@@ -1,0 +1,4 @@
+employeeId,name,email,phone,department,qualification,password,isActive
+SAL-T101,Prof. Neel Patel,neel.patel@sal.edu,9876543101,Computer Engineering,M.Tech,teacher123,true
+SAL-T102,Prof. Kavita Shah,kavita.shah@sal.edu,9876543102,Computer Engineering,M.E.,teacher123,true
+SAL-T201,Prof. Jay Mehta,jay.mehta@sal.edu,9876543103,Information Technology,M.Tech,teacher123,true

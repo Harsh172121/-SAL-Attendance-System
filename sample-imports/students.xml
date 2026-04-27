@@ -1,0 +1,38 @@
+<students>
+  <student>
+    <enrollmentNo>SAL2025001</enrollmentNo>
+    <name>Riya Shah</name>
+    <email>riya.shah@sal.edu</email>
+    <phone>9876543201</phone>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <batchName>Batch A</batchName>
+    <password>student123</password>
+    <isActive>true</isActive>
+  </student>
+  <student>
+    <enrollmentNo>SAL2025002</enrollmentNo>
+    <name>Parth Patel</name>
+    <email>parth.patel@sal.edu</email>
+    <phone>9876543202</phone>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <batchName>Batch B</batchName>
+    <password>student123</password>
+    <isActive>true</isActive>
+  </student>
+  <student>
+    <enrollmentNo>SAL2025101</enrollmentNo>
+    <name>Aarav Mehta</name>
+    <email>aarav.mehta@sal.edu</email>
+    <phone>9876543203</phone>
+    <className>IT-5A</className>
+    <classDepartment>Information Technology</classDepartment>
+    <classSemester>5</classSemester>
+    <batchName>Batch A</batchName>
+    <password>student123</password>
+    <isActive>true</isActive>
+  </student>
+</students>

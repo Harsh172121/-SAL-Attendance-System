@@ -1,0 +1,4 @@
+code,name,type,className,classDepartment,classSemester,theoryFacultyEmployeeId,labFacultyEmployeeId,credits,isActive
+CS501,Database Management System,theory+lab,CE-5A,Computer Engineering,5,SAL-T101,SAL-T102,4,true
+CS502,Operating Systems,theory,CE-5A,Computer Engineering,5,SAL-T102,,3,true
+IT501,Software Engineering,theory+lab,IT-5A,Information Technology,5,SAL-T201,SAL-T201,4,true

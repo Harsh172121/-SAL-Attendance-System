@@ -1,0 +1,425 @@
+/**
+ * SAL Education - Student Controller
+ * 
+ * Handles CRUD operations for Students.
+ * VIVA NOTE: Students are assigned to a class and optionally a batch.
+ * Batch is required for lab attendance tracking.
+ */
+
+const { Student, Class, Batch, Attendance } = require('../models');
+const { Op } = require('sequelize');
+
+/**
+ * @desc    Get all students
+ * @route   GET /api/admin/students
+ * @access  Private/Admin
+ */
+const getAllStudents = async (req, res) => {
+  try {
+    const { classId, batchId, isActive, search } = req.query;
+    
+    // Build filter object
+    const where = {};
+    if (classId) where.classId = classId;
+    if (batchId) where.batchId = batchId;
+    if (isActive !== undefined) where.isActive = isActive === 'true';
+    
+    // Search by name or enrollment number
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+        { enrollmentNo: { [Op.like]: `%${search}%` } }
+      ];
+    }
+    
+    const students = await Student.findAll({
+      where,
+      include: [
+        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
+        { model: Batch, as: 'batch', attributes: ['id', 'name'] }
+      ],
+      order: [['enrollmentNo', 'ASC']]
+    });
+    
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students
+    });
+  } catch (error) {
+    console.error('Get students error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching students',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get single student by ID
+ * @route   GET /api/admin/students/:id
+ * @access  Private/Admin
+ */
+const getStudentById = async (req, res) => {
+  try {
+    const student = await Student.findByPk(req.params.id, {
+      include: [
+        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
+        { model: Batch, as: 'batch', attributes: ['id', 'name'] }
+      ]
+    });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: student
+    });
+  } catch (error) {
+    console.error('Get student error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching student',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Create new student
+ * @route   POST /api/admin/students
+ * @access  Private/Admin
+ */
+const createStudent = async (req, res) => {
+  try {
+    const { enrollmentNo, name, email, password, phone, classId, batchId } = req.body;
+    
+    // Validate required fields
+    if (!enrollmentNo || !name || !email || !classId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide enrollment number, name, email, and class'
+      });
+    }
+    
+    // Auto-generate default password if not provided (default: enrollmentNo)
+    // Ensure password meets minimum 6-char requirement
+    const studentPassword = password || (enrollmentNo.length >= 6 ? enrollmentNo : enrollmentNo + '123456'.slice(enrollmentNo.length));
+    
+    // Check if class exists
+    const classExists = await Class.findByPk(classId);
+    if (!classExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Class not found'
+      });
+    }
+    
+    // Check if batch exists and belongs to the class
+    if (batchId) {
+      const batchExists = await Batch.findOne({ where: { id: batchId, classId } });
+      if (!batchExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Batch not found or does not belong to the selected class'
+        });
+      }
+    }
+    
+    // Check for duplicate enrollment number or email
+    const existingStudent = await Student.findOne({
+      where: {
+        [Op.or]: [{ enrollmentNo }, { email }]
+      }
+    });
+    
+    if (existingStudent) {
+      return res.status(400).json({
+        success: false,
+        message: existingStudent.enrollmentNo === enrollmentNo
+          ? 'Enrollment number already exists'
+          : 'Email already exists'
+      });
+    }
+    
+    const student = await Student.create({
+      enrollmentNo,
+      name,
+      email,
+      password: studentPassword,
+      phone,
+      classId,
+      batchId: batchId || null
+    });
+    
+    // Reload with associations
+    await student.reload({
+      include: [
+        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
+        { model: Batch, as: 'batch', attributes: ['id', 'name'] }
+      ]
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Student created successfully',
+      data: student,
+      credentials: {
+        username: email,
+        password: studentPassword,
+        role: 'student',
+        isAutoGenerated: !password
+      }
+    });
+  } catch (error) {
+    console.error('Create student error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating student',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Update student
+ * @route   PUT /api/admin/students/:id
+ * @access  Private/Admin
+ */
+const updateStudent = async (req, res) => {
+  try {
+    const { enrollmentNo, name, email, phone, classId, batchId, isActive } = req.body;
+    
+    const student = await Student.findByPk(req.params.id);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+    
+    // Check for duplicate enrollment number
+    if (enrollmentNo && enrollmentNo !== student.enrollmentNo) {
+      const existingStudent = await Student.findOne({ where: { enrollmentNo } });
+      if (existingStudent) {
+        return res.status(400).json({
+          success: false,
+          message: 'Enrollment number already exists'
+        });
+      }
+    }
+    
+    // Check for duplicate email
+    if (email && email !== student.email) {
+      const existingStudent = await Student.findOne({ where: { email } });
+      if (existingStudent) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+    }
+    
+    // Validate class if being changed
+    if (classId && classId !== student.classId) {
+      const classExists = await Class.findByPk(classId);
+      if (!classExists) {
+        return res.status(404).json({
+          success: false,
+          message: 'Class not found'
+        });
+      }
+      // Reset batch if class changes
+      student.batchId = null;
+    }
+    
+    // Validate batch if provided
+    if (batchId) {
+      const targetClassId = classId || student.classId;
+      const batchExists = await Batch.findOne({ where: { id: batchId, classId: targetClassId } });
+      if (!batchExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Batch not found or does not belong to the selected class'
+        });
+      }
+    }
+    
+    // Update fields
+    if (enrollmentNo) student.enrollmentNo = enrollmentNo;
+    if (name) student.name = name;
+    if (email) student.email = email;
+    if (phone !== undefined) student.phone = phone;
+    if (classId) student.classId = classId;
+    if (batchId !== undefined) student.batchId = batchId || null;
+    if (isActive !== undefined) student.isActive = isActive;
+    
+    await student.save();
+    await student.reload({
+      include: [
+        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
+        { model: Batch, as: 'batch', attributes: ['id', 'name'] }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Student updated successfully',
+      data: student
+    });
+  } catch (error) {
+    console.error('Update student error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating student',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Delete student
+ * @route   DELETE /api/admin/students/:id
+ * @access  Private/Admin
+ */
+const deleteStudent = async (req, res) => {
+  try {
+    const student = await Student.findByPk(req.params.id);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+    
+    // Delete related attendance records first to avoid foreign key constraint
+    await Attendance.destroy({ where: { studentId: student.id } });
+    
+    await student.destroy();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Student deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete student error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting student',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Assign student to batch
+ * @route   PUT /api/admin/students/:id/assign-batch
+ * @access  Private/Admin
+ */
+const assignBatch = async (req, res) => {
+  try {
+    const { batchId } = req.body;
+    
+    const student = await Student.findByPk(req.params.id);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+    
+    // Validate batch belongs to student's class
+    if (batchId) {
+      const batch = await Batch.findOne({ where: { id: batchId, classId: student.classId } });
+      if (!batch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Batch not found or does not belong to student\'s class'
+        });
+      }
+    }
+    
+    student.batchId = batchId || null;
+    await student.save();
+    await student.reload({
+      include: [
+        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
+        { model: Batch, as: 'batch', attributes: ['id', 'name'] }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      message: batchId ? 'Student assigned to batch successfully' : 'Student removed from batch',
+      data: student
+    });
+  } catch (error) {
+    console.error('Assign batch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning batch',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Reset student password
+ * @route   PUT /api/admin/students/:id/reset-password
+ * @access  Private/Admin
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+    
+    const student = await Student.findByPk(req.params.id);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+    
+    student.password = newPassword;
+    await student.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error resetting password',
+      error: error.message
+    });
+  }
+};
+
+module.exports = {
+  getAllStudents,
+  getStudentById,
+  createStudent,
+  updateStudent,
+  deleteStudent,
+  assignBatch,
+  resetPassword
+};

@@ -1,0 +1,32 @@
+<teachers>
+  <teacher>
+    <employeeId>SAL-T101</employeeId>
+    <name>Prof. Neel Patel</name>
+    <email>neel.patel@sal.edu</email>
+    <phone>9876543101</phone>
+    <department>Computer Engineering</department>
+    <qualification>M.Tech</qualification>
+    <password>teacher123</password>
+    <isActive>true</isActive>
+  </teacher>
+  <teacher>
+    <employeeId>SAL-T102</employeeId>
+    <name>Prof. Kavita Shah</name>
+    <email>kavita.shah@sal.edu</email>
+    <phone>9876543102</phone>
+    <department>Computer Engineering</department>
+    <qualification>M.E.</qualification>
+    <password>teacher123</password>
+    <isActive>true</isActive>
+  </teacher>
+  <teacher>
+    <employeeId>SAL-T201</employeeId>
+    <name>Prof. Jay Mehta</name>
+    <email>jay.mehta@sal.edu</email>
+    <phone>9876543103</phone>
+    <department>Information Technology</department>
+    <qualification>M.Tech</qualification>
+    <password>teacher123</password>
+    <isActive>true</isActive>
+  </teacher>
+</teachers>

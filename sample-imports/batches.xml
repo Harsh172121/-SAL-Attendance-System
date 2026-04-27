@@ -1,0 +1,26 @@
+<batches>
+  <batch>
+    <name>Batch A</name>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <description>Lab group A</description>
+    <isActive>true</isActive>
+  </batch>
+  <batch>
+    <name>Batch B</name>
+    <className>CE-5A</className>
+    <classDepartment>Computer Engineering</classDepartment>
+    <classSemester>5</classSemester>
+    <description>Lab group B</description>
+    <isActive>true</isActive>
+  </batch>
+  <batch>
+    <name>Batch A</name>
+    <className>IT-5A</className>
+    <classDepartment>Information Technology</classDepartment>
+    <classSemester>5</classSemester>
+    <description>IT lab group A</description>
+    <isActive>true</isActive>
+  </batch>
+</batches>
