@@ -1,6 +1,9 @@
 # SAL Education - Attendance Management System
 
+![Project Poster](projectlogo.png)
+
 A comprehensive College Attendance Management System built with React (Vite), Node.js (Express), and MySQL (Sequelize).
+
 
 ## 🚀 Features
 
