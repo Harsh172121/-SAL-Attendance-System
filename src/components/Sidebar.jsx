@@ -257,7 +257,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sticky top-16 flex h-[calc(100vh-4rem)] w-64 shrink-0 flex-col bg-white shadow-lg">
+    <aside className="flex min-h-[calc(100vh-4rem)] w-64 shrink-0 flex-col bg-white shadow-lg">
       {/* Sidebar header */}
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-blue-800">
@@ -267,7 +267,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation links */}
-      <nav className="flex-1 overflow-y-auto p-4">
+      <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {currentMenuItems.map((item) => (
             <li key={item.path}>

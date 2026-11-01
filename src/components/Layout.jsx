@@ -24,7 +24,7 @@ const Layout = () => {
         <Sidebar />
 
         {/* Main content area */}
-        <main className="flex-1 overflow-x-hidden p-6">
+        <main className="min-w-0 flex-1 p-6">
           {/* Outlet renders the matched child route */}
           <Outlet />
         </main>
