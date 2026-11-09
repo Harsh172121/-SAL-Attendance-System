@@ -1,21 +1,16 @@
 /**
  * SAL Education - College Attendance Management System
  * Axios API Configuration
- * This file sets up axios with base URL and interceptors for API calls
- * Backend will be integrated later - this provides the structure
+ * This file sets up axios with the same-origin API base URL and interceptors.
  */
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Keep frontend and backend on the same hostname (localhost/127.0.0.1)
-// so auth cookies are treated as same-site in development.
-const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-
-// Create axios instance with default config
-// TODO: Update baseURL when backend is ready
+// Use the same origin in production (Vercel routes /api to the backend) and
+// in Vercel dev. Vite proxies /api to the local Express server for npm run dev.
 const api = axios.create({
-  baseURL: `http://${API_HOST}:5000/api`, // Backend API URL
+  baseURL: '/api',
   timeout: 10000, // 10 second timeout
   withCredentials: true, // Required for httpOnly auth cookie
   headers: {

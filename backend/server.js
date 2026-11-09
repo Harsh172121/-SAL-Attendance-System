@@ -43,15 +43,26 @@ const allowedOrigins = (process.env.CORS_ORIGINS
       'http://127.0.0.1:3000'
     ]);
 
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+// The deployed SPA and API share one Vercel origin. Allow same-origin requests
+// there while keeping the explicit allowlist for local and external clients.
+app.use(cors((req, callback) => {
+  const origin = req.get('origin');
+  const host = req.get('host');
+  let sameOrigin = false;
 
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-  credentials: true
+  if (origin && host) {
+    try {
+      sameOrigin = new URL(origin).host.toLowerCase() === host.toLowerCase();
+    } catch {
+      sameOrigin = false;
+    }
+  }
+
+  if (!origin || allowedOrigins.includes(origin) || sameOrigin) {
+    return callback(null, { origin: true, credentials: true });
+  }
+
+  return callback(new Error(`CORS blocked for origin: ${origin}`));
 }));
 
 /**
