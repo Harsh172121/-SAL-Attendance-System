@@ -15,10 +15,7 @@ const dotenv = require('dotenv');
 // Load environment variables from .env file BEFORE importing db
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const { connectDB } = require('./config/db');
-
-// Connect to PostgreSQL. Schema migrations are a separate, explicit operation.
-connectDB().catch(() => process.exit(1));
+const { connectDB } = require('./config/db.js');
 
 // Initialize Express application
 const app = express();
@@ -156,8 +153,13 @@ app.use((err, req, res, next) => {
 const PORT = Number(process.env.API_PORT || process.env.PORT || 5000);
 const HOST = process.env.API_HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
-app.listen(PORT, HOST, () => {
-  console.log(`
+const startServer = async () => {
+  // Connect to PostgreSQL before accepting requests. Schema migrations are a
+  // separate, explicit operation.
+  await connectDB();
+
+  return app.listen(PORT, HOST, () => {
+    console.log(`
   ╔═══════════════════════════════════════════════╗
   ║     SAL Education Attendance System API       ║
   ║                                               ║
@@ -165,6 +167,9 @@ app.listen(PORT, HOST, () => {
   ║     Environment: ${process.env.NODE_ENV || 'development'}               ║
   ╚═══════════════════════════════════════════════╝
   `);
-});
+  });
+};
+
+startServer().catch(() => process.exit(1));
 
 module.exports = app;
