@@ -1,26 +1,32 @@
 /**
  * SAL Education - Models Index
- * 
+ *
  * Centralized export of all models for easy importing.
  * VIVA NOTE: This pattern improves code organization and maintainability.
  * Also sets up Sequelize associations between models.
  */
 
-const { sequelize } = require('../config/db');
-const Admin = require('./Admin');
-const Teacher = require('./Teacher');
-const Student = require('./Student');
-const Class = require('./Class');
-const Batch = require('./Batch');
-const Subject = require('./Subject');
-const SubjectClass = require('./SubjectClass');
-const Classroom = require('./Classroom');
-const Attendance = require('./Attendance');
-const LectureSlot = require('./LectureSlot');
-const LeaveApplication = require('./LeaveApplication');
-const ProxyRequest = require('./ProxyRequest');
-const ProxyAssignment = require('./ProxyAssignment');
-const LectureLog = require('./LectureLog');
+const sequelize = require('../config/db.js').sequelize;
+
+if (!sequelize || typeof sequelize.define !== 'function') {
+  throw new TypeError('Model initialization requires a Sequelize instance');
+}
+
+// Pass the same database instance into every model factory.
+const Admin = require('./Admin.js')(sequelize);
+const Teacher = require('./Teacher.js')(sequelize);
+const Student = require('./Student.js')(sequelize);
+const Class = require('./Class.js')(sequelize);
+const Batch = require('./Batch.js')(sequelize);
+const Subject = require('./Subject.js')(sequelize);
+const SubjectClass = require('./SubjectClass.js')(sequelize);
+const Classroom = require('./Classroom.js')(sequelize);
+const Attendance = require('./Attendance.js')(sequelize);
+const LectureSlot = require('./LectureSlot.js')(sequelize);
+const LeaveApplication = require('./LeaveApplication.js')(sequelize);
+const ProxyRequest = require('./ProxyRequest.js')(sequelize);
+const ProxyAssignment = require('./ProxyAssignment.js')(sequelize);
+const LectureLog = require('./LectureLog.js')(sequelize);
 
 // ============================================
 // ASSOCIATIONS

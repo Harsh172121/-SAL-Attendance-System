@@ -7,34 +7,41 @@
  */
 
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
 
-const SubjectClass = sequelize.define('SubjectClass', {
-  subjectId: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    references: {
-      model: 'subjects',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
-  },
-  classId: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    references: {
-      model: 'classes',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+function defineSubjectClass(sequelize) {
+  if (!sequelize || typeof sequelize.define !== 'function') {
+    throw new TypeError('defineSubjectClass requires a Sequelize instance');
   }
-}, {
-  tableName: 'subject_classes',
-  timestamps: false,
-  // The composite primary key already indexes subjectId as its leading column.
-  // Keep the reverse lookup index for classId only.
-  indexes: [{ fields: ['classId'] }]
-});
 
-module.exports = SubjectClass;
+  const SubjectClass = sequelize.define('SubjectClass', {
+    subjectId: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      references: {
+        model: 'subjects',
+        key: 'id'
+      },
+      onDelete: 'CASCADE'
+    },
+    classId: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      references: {
+        model: 'classes',
+        key: 'id'
+      },
+      onDelete: 'CASCADE'
+    }
+  }, {
+    tableName: 'subject_classes',
+    timestamps: false,
+    // The composite primary key already indexes subjectId as its leading column.
+    // Keep the reverse lookup index for classId only.
+    indexes: [{ fields: ['classId'] }]
+  });
+
+  return SubjectClass;
+}
+
+module.exports = defineSubjectClass;
 
