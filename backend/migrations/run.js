@@ -4,9 +4,18 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+
+// Schema changes use Neon’s direct connection. Runtime traffic continues to use
+// the pooled DATABASE_URL.
+if (process.env.DATABASE_URL_UNPOOLED) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL_UNPOOLED;
+}
 
 const { DataTypes, QueryTypes } = require('sequelize');
 const { sequelize, connectDB } = require('../config/db');
+const { verifyMigrationTarget } = require('./target');
 
 const MIGRATION_FILE = /^\d{3}_[a-z0-9_-]+\.js$/;
 const LEDGER_TABLE = 'schema_migrations';
@@ -20,21 +29,6 @@ const tableExists = async (queryInterface, tableName) => {
   return tables.some((table) => (
     (typeof table === 'string' ? table : table.tableName || table.name) === tableName
   ));
-};
-
-const verifyTarget = async () => {
-  const [identityRows] = await sequelize.query(
-    'SELECT current_database() AS database, current_user AS connected_user, current_schema() AS schema'
-  );
-  const identity = identityRows[0];
-
-  if (
-    identity.database !== 'sal_attendance' ||
-    identity.connected_user !== 'sal_user' ||
-    identity.schema !== 'public'
-  ) {
-    throw new Error('Migrations are restricted to sal_attendance as sal_user in public.');
-  }
 };
 
 const ensureMigrationLedger = async (queryInterface) => {
@@ -67,7 +61,7 @@ const runMigrations = async (direction) => {
 
   await connectDB();
   const queryInterface = sequelize.getQueryInterface();
-  await verifyTarget();
+  await verifyMigrationTarget(sequelize, { allowNeon: direction === 'up' });
 
   if (direction === 'down' && !(await tableExists(queryInterface, LEDGER_TABLE))) {
     console.log('No migration ledger exists; nothing to roll back.');

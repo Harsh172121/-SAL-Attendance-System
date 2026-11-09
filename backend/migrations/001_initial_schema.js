@@ -1,6 +1,7 @@
 'use strict';
 
 const { DataTypes, QueryTypes } = require('sequelize');
+const { verifyMigrationTarget } = require('./target');
 
 const applicationTables = [
   'admins',
@@ -51,19 +52,7 @@ const addIndex = (queryInterface, table, fields, transaction, name, unique = fal
 );
 
 const preflight = async ({ sequelize, queryInterface, transaction }) => {
-  const rows = await sequelize.query(
-    'SELECT current_database() AS database, current_user AS connected_user, current_schema() AS schema',
-    { type: QueryTypes.SELECT, transaction }
-  );
-  const identity = rows[0];
-
-  if (
-    identity.database !== 'sal_attendance' ||
-    identity.connected_user !== 'sal_user' ||
-    identity.schema !== 'public'
-  ) {
-    throw new Error('Initial schema migration is restricted to sal_attendance as sal_user in public.');
-  }
+  await verifyMigrationTarget(sequelize, { allowNeon: true, transaction });
 
   const relations = await sequelize.query(
     `SELECT relation.relname AS name, relation.relkind AS kind

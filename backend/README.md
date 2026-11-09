@@ -122,6 +122,13 @@ backend/
    NODE_ENV=development
    ```
 
+   For Neon, initialize and deploy from the repository root with the Neon CLI.
+   It stores the pooled `DATABASE_URL` and direct `DATABASE_URL_UNPOOLED` in the
+   ignored root `.env.local`. The backend uses the pooled URL for requests and
+   the migration runner uses the direct URL for schema changes. Keep
+   `backend/.env` for app secrets such as `JWT_SECRET` and the local `DB_*`
+   fallback; do not commit either env file.
+
 4. **Prepare the database separately**
    - The application does not create or alter tables at startup.
    - The reviewed initial PostgreSQL schema migration is `migrations/001_initial_schema.js`.

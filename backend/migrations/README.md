@@ -28,11 +28,14 @@ relationships, especially:
   represented by the current Sequelize models.
 
 `001_initial_schema.js` defines the verified empty PostgreSQL baseline, with a
-read-only preflight that refuses to run on a different database/user/schema or
-when conflicting relations or enum types already exist. Its `down` operation
-refuses rollback if any application table contains rows. Use `npm run db:rollback` only before
-application data has been added. For later migrations, prefer a new corrective
-migration over rollback after data exists.
+read-only preflight that refuses to run when conflicting relations or enum
+types already exist. Forward migrations may target either the local
+`sal_attendance` database as `sal_user`, or the Neon branch selected by the
+CLI-provided `NEON_BRANCH` and matching `DATABASE_URL`. The runner uses
+`DATABASE_URL_UNPOOLED` for Neon migrations and leaves the pooled URL for
+application traffic. Rollback remains restricted to the local database and
+refuses to proceed if any application table contains rows. For later schema
+changes, prefer a new corrective migration over rollback after data exists.
 
 The current model definitions preserve the declared teacher priority, leave
 recipient and proxy status values, camelCase attributes, integer identity IDs,
