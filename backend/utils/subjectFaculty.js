@@ -1,5 +1,4 @@
 const { Op } = require('sequelize');
-const { sequelize } = require('../config/db');
 
 const PRIMARY_FIELDS = {
   theory: 'theoryFacultyId',
@@ -92,10 +91,9 @@ const getTeachingTypeForTeacher = (subject, teacherId) => {
   return null;
 };
 
-const buildJsonContainsCondition = (column, teacherId) => sequelize.where(
-  sequelize.literal(`JSON_CONTAINS(COALESCE(\`${column}\`, JSON_ARRAY()), '${JSON.stringify(teacherId)}')`),
-  1
-);
+const buildJsonContainsCondition = (column, teacherId) => ({
+  [column]: { [Op.contains]: [teacherId] }
+});
 
 const buildTeacherAssignmentConditions = (teacherId, type) => {
   const normalizedTeacherId = toTeacherId(teacherId);

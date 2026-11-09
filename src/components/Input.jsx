@@ -35,7 +35,9 @@ const Input = ({
   className = '',
   min,
   max,
-  step
+  step,
+  minLength,
+  maxLength
 }) => {
   return (
     <div className={className}>
@@ -62,6 +64,8 @@ const Input = ({
         min={min}
         max={max}
         step={step}
+        minLength={minLength}
+        maxLength={maxLength}
         className={`w-full px-4 py-2.5 border rounded-lg transition-colors
           ${error 
             ? 'border-red-500 focus:ring-red-500' 

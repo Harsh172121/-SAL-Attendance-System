@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard } from '../../components';
+import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard, BulkDeleteControl } from '../../components';
 import { batchService, classService } from '../../services/dataService';
 import { importConfigs } from '../../constants/importConfigs';
 
@@ -24,6 +24,7 @@ const ManageBatches = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
+  const [selectedIds, setSelectedIds] = useState([]);
   // Form data
   const [formData, setFormData] = useState({
     name: '',
@@ -100,6 +101,7 @@ const ManageBatches = () => {
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       await batchService.delete(deleteDialog.item.id);
+      setSelectedIds((ids) => ids.filter((id) => id !== deleteDialog.item.id));
       await loadData();
       toast.success('Batch deleted successfully!');
     }
@@ -193,6 +195,15 @@ const ManageBatches = () => {
           <div className="text-sm text-gray-500 flex items-center">
             Showing {filteredBatches.length} batches
           </div>
+          <BulkDeleteControl
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            deleteItem={batchService.delete}
+            onDeleted={loadData}
+            itemLabel="batch"
+            itemLabelPlural="batches"
+            consequences="Students assigned to deleted batches will remain enrolled, but will be unassigned from those batches."
+          />
         </div>
       </Card>
 
@@ -203,6 +214,8 @@ const ManageBatches = () => {
           data={filteredBatches}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="No batches found. Click 'Add Batch' to create one."
         />
       </Card>

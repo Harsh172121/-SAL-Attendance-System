@@ -1,19 +1,21 @@
 /**
  * SAL Education - Manage Classrooms Page
  *
- * Adds classroom numbers and lists available classrooms for timetable use.
+ * Adds, imports, and manages classroom numbers for timetable use.
  */
 
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Input } from '../../components';
+import { Card, Button, Table, Input, DataImportCard, BulkDeleteControl } from '../../components';
 import { classroomService } from '../../services/dataService';
+import { importConfigs } from '../../constants/importConfigs';
 
 const ManageClassrooms = () => {
   const [classrooms, setClassrooms] = useState([]);
   const [classroomNumber, setClassroomNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const loadClassrooms = async () => {
     setLoading(true);
@@ -78,24 +80,40 @@ const ManageClassrooms = () => {
         </form>
       </Card>
 
+      <DataImportCard
+        config={importConfigs.classrooms}
+        onImported={loadClassrooms}
+      />
+
       <Card>
+        <div className="mb-4 flex justify-between text-sm text-gray-500">
+          <span>Classroom List</span>
+          <div className="flex items-center gap-4">
+            <span>Total: {classrooms.length}</span>
+            <BulkDeleteControl
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              deleteMany={classroomService.deleteMany}
+              onDeleted={loadClassrooms}
+              itemLabel="classroom"
+              itemLabelPlural="classrooms"
+              consequences="Lecture slots using these rooms will remain, but their classroom assignment will be cleared."
+            />
+          </div>
+        </div>
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-800"></div>
           </div>
         ) : (
-          <>
-            <div className="mb-4 flex justify-between text-sm text-gray-500">
-              <span>Classroom List</span>
-              <span>Total: {classrooms.length}</span>
-            </div>
-            <Table
-              columns={columns}
-              data={classrooms}
-              showActions={false}
-              emptyMessage="No classrooms added yet. Add a classroom number to begin."
-            />
-          </>
+          <Table
+            columns={columns}
+            data={classrooms}
+            showActions={false}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            emptyMessage="No classrooms added yet. Add a classroom number to begin."
+          />
         )}
       </Card>
     </div>

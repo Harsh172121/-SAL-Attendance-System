@@ -22,6 +22,7 @@ export { default as Table } from './Table';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as StatsCard } from './StatsCard';
 export { default as DataImportCard } from './DataImportCard';
+export { default as BulkDeleteControl } from './BulkDeleteControl';
 
 // Form components
 export { default as Input } from './Input';

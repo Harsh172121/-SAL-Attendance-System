@@ -80,7 +80,7 @@ const Subject = sequelize.define('Subject', {
     }
   },
   theoryFacultyIds: {
-    type: DataTypes.JSON,
+    type: DataTypes.JSONB,
     allowNull: true,
     get() {
       return normalizeTeacherIds(this.getDataValue('theoryFacultyIds'));
@@ -91,7 +91,7 @@ const Subject = sequelize.define('Subject', {
     }
   },
   labFacultyIds: {
-    type: DataTypes.JSON,
+    type: DataTypes.JSONB,
     allowNull: true,
     get() {
       return normalizeTeacherIds(this.getDataValue('labFacultyIds'));

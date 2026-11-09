@@ -90,21 +90,20 @@ const subjects = [
 
 const seedDatabase = async () => {
   try {
-    // Connect to MySQL
+    // Connect to PostgreSQL. Schema creation is a separate migration step.
     await connectDB();
-    console.log('MySQL Connected for seeding...');
+    console.log('PostgreSQL connected for seeding...');
     
-    // Clear existing data (disable foreign key checks for MySQL)
-    console.log('🗑️  Clearing existing data...');
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    await Attendance.destroy({ where: {}, truncate: true });
-    await Subject.destroy({ where: {}, truncate: true });
-    await Student.destroy({ where: {}, truncate: true });
-    await Batch.destroy({ where: {}, truncate: true });
-    await Class.destroy({ where: {}, truncate: true });
-    await Teacher.destroy({ where: {}, truncate: true });
-    await Admin.destroy({ where: {}, truncate: true });
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    // This explicit seed command clears all application tables before inserting
+    // demo data. PostgreSQL handles dependent foreign keys through CASCADE.
+    console.log('🗑️  Clearing all application data...');
+    await sequelize.query(`
+      TRUNCATE TABLE
+        attendances, subject_classes, lecture_logs, leave_applications,
+        proxy_assignments, proxy_requests, lecture_slots, subjects,
+        students, batches, classes, teachers, admins, classrooms
+      RESTART IDENTITY CASCADE
+    `);
     
     console.log('✅ Existing data cleared');
     
@@ -266,5 +265,10 @@ const seedDatabase = async () => {
   }
 };
 
-// Run seeder
-seedDatabase();
+// Require an explicit confirmation flag because this operation truncates data.
+if (!process.argv.includes('--reset')) {
+  console.error('This seeder clears application data. Run with: npm run seed -- --reset');
+  process.exitCode = 1;
+} else {
+  seedDatabase();
+}

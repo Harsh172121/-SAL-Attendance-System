@@ -39,7 +39,7 @@ const MarkAttendance = () => {
   const [selectedType, setSelectedType] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [topicCovered, setTopicCovered] = useState('');
+  const [submitError, setSubmitError] = useState('');
   
   // Data state
   const [assignedSubjects, setAssignedSubjects] = useState([]);
@@ -250,36 +250,41 @@ const MarkAttendance = () => {
       return;
     }
 
-    setIsSubmitting(true);
+    const attendanceData = students.map((student) => {
+      const studentId = student.studentId ?? student.id;
+      return {
+        studentId: Number(studentId),
+        status: attendance[studentId]
+      };
+    });
+    if (attendanceData.some((record) => !['present', 'absent'].includes(record.status))) {
+      const message = 'Mark every student present or absent before submitting';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
 
-    // Prepare attendance data for backend
+    setSubmitError('');
+    setIsSubmitting(true);
     const payload = {
       subjectId: currentSubject?.id,
       date: selectedDate,
       type: selectedType,
       batchId: selectedType === 'lab' ? parseInt(selectedBatch) : null,
-      topicCovered,
-      attendanceData: students.map(student => ({
-        studentId: student.id,
-        status: attendance[student.id]
-      }))
+      attendanceData
     };
 
     try {
       if (slotContext) {
         await attendanceService.saveSlotAttendance(Number(slotContext.slotId), {
-          date: selectedDate,
-          topicCovered,
-          attendance: students.map((student) => ({
-            studentId: student.studentId || student.id,
-            status: attendance[student.studentId || student.id] === 'absent' ? 'absent' : 'present'
-          }))
+          date: slotDetails?.date || selectedDate,
+          attendance: attendanceData
         });
       } else if (currentSubject) {
         await attendanceService.markAttendance(payload);
       }
 
-      const presentCount = Object.values(attendance).filter(s => s === 'present').length;
+      const presentCount = attendanceData.filter((record) => record.status === 'present').length;
       toast.success(
         `Attendance saved! Present: ${presentCount}, Absent: ${students.length - presentCount}`
       );
@@ -287,8 +292,13 @@ const MarkAttendance = () => {
       if (slotContext) {
         setSlotDetails((prev) => (prev ? { ...prev, isLocked: true } : prev));
       }
-    } catch {
-      toast.error('Failed to save attendance. Please try again.');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save attendance. Please try again.';
+      setSubmitError(errorMessage);
+      // The API interceptor already displays HTTP and network errors.
+      if (!error.response && !error.request) {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -515,20 +525,8 @@ const MarkAttendance = () => {
             ))}
           </div>
 
-          {/* Topic Covered */}
-          <div className="mt-6 mb-4">
-            <Input
-              label="Topic Covered"
-              id="topicCovered"
-              placeholder="Enter the topic covered in this lecture (e.g., Introduction to React)"
-              value={topicCovered}
-              onChange={(e) => setTopicCovered(e.target.value)}
-              disabled={slotDetails?.isLocked || isSubmitted}
-              required
-            />
-          </div>
-
           {/* Submit button */}
+          {submitError && <p className="mt-4 text-right text-sm text-red-600" role="alert">{submitError}</p>}
           <div className="mt-6 flex justify-end">
             <Button onClick={handleSubmit} size="lg" disabled={isSubmitting || isSubmitted || slotDetails?.isLocked}>
               {isSubmitted ? 'Attendance Submitted' : isSubmitting ? 'Saving...' : 'Save Attendance'}

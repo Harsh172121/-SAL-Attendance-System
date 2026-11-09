@@ -27,12 +27,6 @@ const Classroom = sequelize.define('Classroom', {
 }, {
   tableName: 'classrooms',
   timestamps: false,
-  indexes: [
-    {
-      unique: true,
-      fields: ['classroom_number']
-    }
-  ]
 });
 
 module.exports = Classroom;

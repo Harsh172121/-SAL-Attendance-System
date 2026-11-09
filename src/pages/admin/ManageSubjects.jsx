@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard } from '../../components';
+import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard, BulkDeleteControl } from '../../components';
 import { subjectService, classService, teacherService } from '../../services/dataService';
 import { importConfigs } from '../../constants/importConfigs';
 import { formatTeacherDepartments } from '../../utils/teacherDepartments';
@@ -39,6 +39,7 @@ const ManageSubjects = () => {
   const [teachers, setTeachers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [selectedClassIds, setSelectedClassIds] = useState([]);
   
@@ -149,6 +150,7 @@ const ManageSubjects = () => {
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       await subjectService.delete(deleteDialog.item.id);
+      setSelectedIds((ids) => ids.filter((id) => id !== deleteDialog.item.id));
       await loadData();
       toast.success('Subject deleted successfully!');
     }
@@ -412,6 +414,17 @@ const ManageSubjects = () => {
             Showing {displaySubjects.length} subjects
           </div>
         </div>
+        {selectedIds.length > 0 && <div className="mt-4 flex justify-end">
+          <BulkDeleteControl
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            deleteItem={subjectService.delete}
+            onDeleted={loadData}
+            itemLabel="subject"
+            itemLabelPlural="subjects"
+            consequences="Subjects with linked attendance or lecture records may be blocked from deletion."
+          />
+        </div>}
       </Card>
 
       {/* Subjects table */}
@@ -421,6 +434,8 @@ const ManageSubjects = () => {
           data={displaySubjects}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="No subjects found. Click 'Add Subject' to create one."
         />
       </Card>

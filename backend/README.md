@@ -40,8 +40,8 @@ A comprehensive backend API for managing college attendance with role-based acce
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: MongoDB
-- **ODM**: Mongoose
+- **Database**: PostgreSQL
+- **ORM**: Sequelize v6 (`pg`, `pg-hstore`)
 - **Authentication**: JWT (jsonwebtoken)
 - **Password Hashing**: bcryptjs
 - **Environment Variables**: dotenv
@@ -52,7 +52,7 @@ A comprehensive backend API for managing college attendance with role-based acce
 ```
 backend/
 ├── config/
-│   └── db.js              # MongoDB connection
+│   └── db.js              # PostgreSQL connection
 ├── controllers/
 │   ├── authController.js
 │   ├── classController.js
@@ -92,7 +92,7 @@ backend/
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- MongoDB (local or Atlas)
+- PostgreSQL server (database creation is a separate setup step)
 - npm or yarn
 
 ### Installation
@@ -111,31 +111,24 @@ backend/
    
    Create a `.env` file (or update existing):
    ```env
-   MONGO_URI=mongodb://localhost:27017/sal_attendance
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=sal_attendance
+   DB_USER=postgres
+   DB_PASSWORD=your_password
    JWT_SECRET=your_jwt_secret_key
    JWT_EXPIRE=7d
    PORT=5000
    NODE_ENV=development
    ```
 
-4. **Start MongoDB**
-   - Local: Ensure MongoDB service is running
-   - Atlas: Use your connection string in MONGO_URI
+4. **Prepare the database separately**
+   - The application does not create or alter tables at startup.
+   - The reviewed initial PostgreSQL schema migration is `migrations/001_initial_schema.js`.
+   - Create the PostgreSQL database separately. Moving existing MySQL data is a separate future task.
+   - After confirming the target is correct and its application schema is empty, apply it with `npm run db:migrate`. Its preflight refuses to run if conflicting relations or enum types exist. See `migrations/README.md`.
 
-5. **Seed the database (Optional)**
-   ```bash
-   npm run seed
-   ```
-   This creates sample data including:
-   - 1 Admin
-   - 5 Teachers
-   - 12 Students
-   - 6 Classes
-   - 9 Batches
-   - 8 Subjects
-   - Sample attendance records
-
-6. **Start the server**
+5. **Start the server**
    ```bash
    # Development (with nodemon)
    npm run dev
@@ -143,6 +136,8 @@ backend/
    # Production
    npm start
    ```
+
+The sample seeder clears application tables. Run it only after schema setup and only when its data reset is intended: `npm run seed -- --reset`. `reset-users.js` is retired because it bypassed foreign keys and weakened a required column.
 
 ## 🔐 Default Login Credentials
 
@@ -297,7 +292,7 @@ Content-Type: application/json
 1. **JWT Authentication**: Stateless token-based auth
 2. **Password Hashing**: bcrypt with salt rounds
 3. **Role-Based Access**: Middleware protects routes
-4. **Input Validation**: Mongoose schema validation
+4. **Input Validation**: Sequelize model validation
 5. **Error Handling**: Centralized error responses
 
 ## 📖 VIVA Notes
@@ -305,7 +300,7 @@ Content-Type: application/json
 Key concepts for viva preparation:
 
 1. **MVC Architecture**: Models, Controllers, Routes separation
-2. **Mongoose ODM**: Schema validation, virtuals, pre-save hooks
+2. **Sequelize ORM**: Schema validation, associations, pre-save hooks
 3. **JWT Flow**: Token generation, verification, expiry
 4. **RBAC**: Role-based access control implementation
 5. **REST API**: Resource-based endpoints, HTTP methods

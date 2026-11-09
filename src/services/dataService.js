@@ -3,7 +3,7 @@
  * Data Service
  * 
  * This file contains all API-based CRUD operations for the frontend.
- * Connected to MySQL backend via REST API.
+ * Connected to the PostgreSQL-backed API via REST.
  * 
  * VIVA NOTE: This service layer separates data logic from UI components,
  * making API integration clean and maintainable.
@@ -413,6 +413,16 @@ export const classroomService = {
       console.error('Error creating classroom:', error);
       throw error;
     }
+  },
+
+  deleteMany: async (ids) => {
+    try {
+      const response = await api.delete('/classrooms/bulk', { data: { ids } });
+      return response.data.success ? response.data.data.deletedIds : [];
+    } catch (error) {
+      console.error('Error deleting classrooms:', error);
+      throw error;
+    }
   }
 };
 
@@ -618,12 +628,13 @@ export const attendanceService = {
       const response = await api.get(`/attendance/slots/${slotId}/context`, {
         params: { date }
       });
-      return response.data.success
-        ? response.data.data
-        : { slotDetails: null, students: [] };
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Unable to load attendance students');
+      }
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching slot attendance context:', error);
-      return { slotDetails: null, students: [] };
+      throw error;
     }
   },
 
@@ -678,7 +689,10 @@ export const attendanceService = {
   markAttendance: async (attendanceData) => {
     try {
       const response = await api.post('/teacher/attendance', attendanceData);
-      return response.data.success ? response.data.data : null;
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Unable to save attendance');
+      }
+      return response.data.data;
     } catch (error) {
       console.error('Error marking attendance:', error);
       throw error;
@@ -694,7 +708,10 @@ export const attendanceService = {
   saveSlotAttendance: async (slotId, payload) => {
     try {
       const response = await api.post(`/attendance/slots/${slotId}/save`, payload);
-      return response.data.success ? response.data.data : null;
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Unable to save attendance');
+      }
+      return response.data.data;
     } catch (error) {
       console.error('Error marking slot attendance:', error);
       throw error;
@@ -934,7 +951,10 @@ export const leaveService = {
   reviewLeave: async (id, reviewData) => {
     try {
       const response = await api.put(`/teacher/leave-requests/${id}`, reviewData);
-      return response.data.success ? response.data : null;
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Unable to review leave request');
+      }
+      return response.data;
     } catch (error) {
       console.error('Error reviewing leave:', error);
       throw error;

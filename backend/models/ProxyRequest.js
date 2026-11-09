@@ -75,7 +75,8 @@ const ProxyRequest = sequelize.define('ProxyRequest', {
     allowNull: false
   },
   activeRequestKey: {
-    type: DataTypes.TINYINT,
+    // PostgreSQL has no TINYINT; this flag only stores 1 or NULL.
+    type: DataTypes.SMALLINT,
     allowNull: true,
     defaultValue: 1
   }

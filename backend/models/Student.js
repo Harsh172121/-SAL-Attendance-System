@@ -89,6 +89,7 @@ const Student = sequelize.define('Student', {
   timestamps: true,
   indexes: [
     {
+      name: 'idx_students_class_batch',
       fields: ['classId', 'batchId']
     }
   ],

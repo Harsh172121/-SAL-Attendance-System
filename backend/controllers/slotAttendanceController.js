@@ -7,7 +7,6 @@
  * - POST bulk save attendance for a slot with strict validation and lock semantics
  */
 
-const { QueryTypes } = require('sequelize');
 const {
   sequelize,
   Student,
@@ -15,7 +14,7 @@ const {
   LectureSlot,
   ProxyAssignment,
   Subject,
-  LectureLog
+  Class
 } = require('../models');
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -45,7 +44,15 @@ const getAuthorizedSlotContext = async ({ teacherId, slotId, attendanceDate, tra
       {
         model: Subject,
         as: 'subject',
-        attributes: ['id', 'code', 'name', 'classId', 'theoryFacultyId', 'labFacultyId', 'theoryFacultyIds', 'labFacultyIds']
+        attributes: ['id', 'code', 'name', 'theoryFacultyId', 'labFacultyId', 'theoryFacultyIds', 'labFacultyIds'],
+        include: [
+          {
+            model: Class,
+            as: 'classes',
+            attributes: ['id'],
+            through: { attributes: [] }
+          }
+        ]
       }
     ],
     transaction
@@ -55,7 +62,8 @@ const getAuthorizedSlotContext = async ({ teacherId, slotId, attendanceDate, tra
     return { error: { status: 404, message: 'Lecture slot not found' } };
   }
 
-  if (!slot.subject || Number(slot.subject.classId) !== Number(slot.classId)) {
+  const subjectClassIds = (slot.subject?.classes || []).map((classRecord) => Number(classRecord.id));
+  if (!slot.subject || !subjectClassIds.includes(Number(slot.classId))) {
     return {
       error: {
         status: 400,
@@ -122,42 +130,50 @@ const getSlotAttendanceContext = async (req, res) => {
     }
 
     const { slot } = slotContext;
-    const students = await sequelize.query(
-      `
-      SELECT
-        s.id AS studentId,
-        s.name,
-        s.enrollmentNo,
-        COALESCE(
-          (
-            SELECT a2.status
-            FROM attendances a2
-            WHERE a2.studentId = s.id
-              AND a2.slotId = :slotId
-              AND a2.subjectId = :subjectId
-              AND a2.date = :attendanceDate
-            ORDER BY a2.id DESC
-            LIMIT 1
-          ),
-          'not_marked'
-        ) AS attendanceStatus
-      FROM students s
-      WHERE s.classId = :classId
-        AND s.isActive = 1
-        AND (:batchId IS NULL OR s.batchId = :batchId)
-      ORDER BY s.enrollmentNo ASC
-      `,
-      {
-        replacements: {
-          slotId: Number(slot.id),
-          subjectId: Number(slot.subjectId),
-          classId: Number(slot.classId),
-          batchId: slot.batchId ? Number(slot.batchId) : null,
-          attendanceDate
-        },
-        type: QueryTypes.SELECT
+    const studentWhere = {
+      classId: Number(slot.classId),
+      isActive: true
+    };
+
+    // Theory slots are class-wide even if a stale batchId exists on the slot.
+    if (slot.type === 'lab' && slot.batchId) {
+      studentWhere.batchId = Number(slot.batchId);
+    }
+
+    const activeStudents = await Student.findAll({
+      where: studentWhere,
+      attributes: ['id', 'name', 'enrollmentNo'],
+      order: [['enrollmentNo', 'ASC']]
+    });
+
+    const studentIds = activeStudents.map((student) => Number(student.id));
+    const existingAttendance = studentIds.length > 0
+      ? await Attendance.findAll({
+          where: {
+            studentId: studentIds,
+            slotId: Number(slot.id),
+            subjectId: Number(slot.subjectId),
+            date: attendanceDate
+          },
+          attributes: ['id', 'studentId', 'status'],
+          order: [['id', 'DESC']]
+        })
+      : [];
+
+    const attendanceByStudent = new Map();
+    existingAttendance.forEach((record) => {
+      const studentId = Number(record.studentId);
+      if (!attendanceByStudent.has(studentId)) {
+        attendanceByStudent.set(studentId, record.status);
       }
-    );
+    });
+
+    const students = activeStudents.map((student) => ({
+      studentId: Number(student.id),
+      name: student.name,
+      enrollmentNo: student.enrollmentNo,
+      attendanceStatus: attendanceByStudent.get(Number(student.id)) || 'not_marked'
+    }));
 
     const existingAttendanceCount = await Attendance.count({
       where: {
@@ -202,26 +218,19 @@ const getSlotAttendanceContext = async (req, res) => {
  * @access  Private/Teacher
  */
 const saveSlotAttendance = async (req, res) => {
-  const transaction = await sequelize.transaction();
+  let transaction;
 
   try {
+    transaction = await sequelize.transaction();
     const teacherId = Number(req.user.id);
     const slotId = parsePositiveInt(req.params.slotId);
-    const { date, attendance, topicCovered } = req.body;
+    const { date, attendance } = req.body || {};
 
     if (!slotId || !date || !Array.isArray(attendance) || attendance.length === 0) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
         message: 'Please provide slotId, date and non-empty attendance array'
-      });
-    }
-
-    if (!topicCovered || topicCovered.trim().length < 2) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid topic covered (min 2 chars)'
       });
     }
 
@@ -289,8 +298,8 @@ const saveSlotAttendance = async (req, res) => {
 
     // QA-FIXED: Normalize and validate attendance records properly
     const normalizedRecords = attendance.map((record) => ({
-      studentId: parsePositiveInt(record.studentId),
-      status: (record.status || '').toLowerCase()
+      studentId: parsePositiveInt(record?.studentId),
+      status: typeof record?.status === 'string' ? record.status.toLowerCase() : ''
     }));
 
     const invalidRecord = normalizedRecords.find(
@@ -318,7 +327,7 @@ const saveSlotAttendance = async (req, res) => {
       where: {
         id: studentIds,
         classId: Number(slot.classId),
-        ...(slot.batchId ? { batchId: Number(slot.batchId) } : {}),
+        ...(slot.type === 'lab' && slot.batchId ? { batchId: Number(slot.batchId) } : {}),
         isActive: true
       },
       attributes: ['id', 'classId', 'batchId'],
@@ -338,7 +347,7 @@ const saveSlotAttendance = async (req, res) => {
         studentId: record.studentId,
         subjectId: Number(slot.subjectId),
         classId: Number(slot.classId),
-        batchId: slot.batchId || null,
+        batchId: slot.type === 'lab' && slot.batchId ? Number(slot.batchId) : null,
         date: attendanceDate,
         type: slot.type || 'theory',
         status: record.status,
@@ -347,14 +356,6 @@ const saveSlotAttendance = async (req, res) => {
       })),
       { transaction }
     );
-
-    // Save syllabus topic log
-    await LectureLog.create({
-      slotId: Number(slot.id),
-      date: attendanceDate,
-      topicCovered: topicCovered.trim(),
-      markedBy: teacherId
-    }, { transaction });
 
     await transaction.commit();
 
@@ -368,7 +369,11 @@ const saveSlotAttendance = async (req, res) => {
       }
     });
   } catch (error) {
-    await transaction.rollback();
+    if (transaction && !transaction.finished) {
+      await transaction.rollback().catch((rollbackError) => {
+        console.error('[ERROR] Roll back attendance transaction error:', rollbackError);
+      });
+    }
     console.error('[ERROR] Save slot attendance error:', error);
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({

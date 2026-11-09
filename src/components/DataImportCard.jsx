@@ -117,10 +117,12 @@ const DataImportCard = ({ config, onImported }) => {
               <span className="font-semibold text-gray-800">Required columns:</span>{' '}
               {displayRequiredFields.join(', ')}
             </p>
-            <p>
-              <span className="font-semibold text-gray-800">Optional columns:</span>{' '}
-              {displayOptionalFields.join(', ')}
-            </p>
+            {displayOptionalFields.length > 0 && (
+              <p>
+                <span className="font-semibold text-gray-800">Optional columns:</span>{' '}
+                {displayOptionalFields.join(', ')}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1 text-sm text-gray-600">

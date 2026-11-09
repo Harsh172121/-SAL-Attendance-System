@@ -17,8 +17,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const { connectDB } = require('./config/db');
 
-// Connect to MySQL
-connectDB();
+// Connect to PostgreSQL. Schema migrations are a separate, explicit operation.
+connectDB().catch(() => process.exit(1));
 
 // Initialize Express application
 const app = express();

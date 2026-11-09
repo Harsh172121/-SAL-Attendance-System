@@ -765,7 +765,7 @@ npm run dev
 - **Load Testing:** Apache JMeter, Artillery
 - **Security:** OWASP ZAP, Burp Suite Community
 - **Browser DevTools:** Chrome Dev Tools
-- **Database:** MySQL Workbench
+- **Database:** PostgreSQL client tools
 
 ---
 

@@ -3,6 +3,12 @@ const { Teacher } = require('../models');
 const { LEAVE_TARGETS, canReviewLeaves } = require('../constants/roles');
 const { teacherHandlesDepartment } = require('./teacherDepartments');
 const normalizeRole = (role) => String(role || '').trim().toLowerCase();
+const normalizePriority = (priority) => String(priority || '').trim().toUpperCase();
+const sameId = (left, right) => (
+  left !== null && left !== undefined &&
+  right !== null && right !== undefined &&
+  Number(left) === Number(right)
+);
 
 const resolveLeaveRecipients = async ({ classRecord, sentTo }) => {
   if (!LEAVE_TARGETS.includes(sentTo)) {
@@ -44,42 +50,44 @@ const resolveLeaveRecipients = async ({ classRecord, sentTo }) => {
 };
 
 const buildTeacherLeaveScope = (user) => {
-  if (!user || normalizeRole(user.role) !== 'teacher' || !canReviewLeaves(user.priority)) {
+  const priority = normalizePriority(user?.priority);
+  if (!user || normalizeRole(user.role) !== 'teacher' || !canReviewLeaves(priority)) {
     return null;
   }
 
-  if (user.priority === 'ADMIN' || user.priority === 'PRINCIPAL') {
+  if (priority === 'ADMIN' || priority === 'PRINCIPAL') {
     return {};
   }
 
   const filters = [];
 
-  if (user.priority === 'HOD') {
-    filters.push({ hodId: user.id });
+  if (priority === 'HOD') {
+    filters.push({ hodId: Number(user.id) });
   }
 
-  if (user.priority === 'CLASS_COORDINATOR') {
-    filters.push({ coordinatorId: user.id });
+  if (priority === 'CLASS_COORDINATOR') {
+    filters.push({ coordinatorId: Number(user.id) });
   }
 
   return filters.length ? { [Op.or]: filters } : null;
 };
 
 const canTeacherReviewLeave = (user, leave) => {
-  if (!user || normalizeRole(user.role) !== 'teacher' || !canReviewLeaves(user.priority)) {
+  const priority = normalizePriority(user?.priority);
+  if (!user || !leave || normalizeRole(user.role) !== 'teacher' || !canReviewLeaves(priority)) {
     return false;
   }
 
-  if (user.priority === 'ADMIN' || user.priority === 'PRINCIPAL') {
+  if (priority === 'ADMIN' || priority === 'PRINCIPAL') {
     return true;
   }
 
-  if (user.priority === 'HOD') {
-    return leave.hodId === user.id;
+  if (priority === 'HOD') {
+    return sameId(leave.hodId, user.id);
   }
 
-  if (user.priority === 'CLASS_COORDINATOR') {
-    return leave.coordinatorId === user.id;
+  if (priority === 'CLASS_COORDINATOR') {
+    return sameId(leave.coordinatorId, user.id);
   }
 
   return false;

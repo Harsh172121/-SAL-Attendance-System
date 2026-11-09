@@ -16,9 +16,9 @@ const { connectDB } = require('./config/db');
 
 const fixMissingRoles = async () => {
   try {
-    // Connect to MySQL
+    // Connect to PostgreSQL; schema migrations are run separately.
     await connectDB();
-    console.log('MySQL Connected...');
+    console.log('PostgreSQL connected...');
     
     // Fix Admin roles
     console.log('Fixing Admin roles...');

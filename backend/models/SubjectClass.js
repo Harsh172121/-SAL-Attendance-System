@@ -31,10 +31,9 @@ const SubjectClass = sequelize.define('SubjectClass', {
 }, {
   tableName: 'subject_classes',
   timestamps: false,
-  indexes: [
-    { fields: ['subjectId'] },
-    { fields: ['classId'] }
-  ]
+  // The composite primary key already indexes subjectId as its leading column.
+  // Keep the reverse lookup index for classId only.
+  indexes: [{ fields: ['classId'] }]
 });
 
 module.exports = SubjectClass;

@@ -112,7 +112,10 @@ const LectureSlot = sequelize.define('LectureSlot', {
   tableName: 'lecture_slots',
   timestamps: true,
   indexes: [
-    { fields: ['facultyId', 'dayOfWeek'] },
+    {
+      name: 'idx_lecture_slot_faculty_day_time',
+      fields: ['facultyId', 'dayOfWeek', 'startTime', 'endTime', 'isActive']
+    },
     { fields: ['classId'] },
     { fields: ['subjectId'] }
   ]

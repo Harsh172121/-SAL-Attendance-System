@@ -1,4 +1,20 @@
 export const importConfigs = {
+  classrooms: {
+    entity: 'classrooms',
+    singular: 'classroom',
+    title: 'Bulk Import Classrooms',
+    description: 'Upload a CSV or XML file to add classroom numbers.',
+    matchBy: 'Existing rows are matched by classroom number.',
+    requiredFields: ['classroomNumber'],
+    optionalFields: [],
+    sampleRow: {
+      classroomNumber: '101'
+    },
+    notes: [
+      'Classroom numbers must be positive whole numbers.',
+      'Existing classroom numbers are kept and counted as updated.'
+    ]
+  },
   classes: {
     entity: 'classes',
     singular: 'class',

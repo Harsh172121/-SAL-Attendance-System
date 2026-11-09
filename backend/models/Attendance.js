@@ -123,7 +123,10 @@ const Attendance = sequelize.define('Attendance', {
     { fields: ['subjectId', 'date'] },
     { fields: ['studentId', 'subjectId'] },
     { fields: ['classId', 'date'] },
-    { fields: ['slotId', 'date'] }
+    { name: 'idx_attendance_slot_date', fields: ['slotId', 'date'] },
+    { name: 'idx_attendance_student_subject_date', fields: ['studentId', 'subjectId', 'date'] },
+    { name: 'idx_attendance_student_subject_slot', fields: ['studentId', 'subjectId', 'slotId'] },
+    { name: 'unique_slot_student_date', unique: true, fields: ['slotId', 'studentId', 'date'] }
   ]
 });
 

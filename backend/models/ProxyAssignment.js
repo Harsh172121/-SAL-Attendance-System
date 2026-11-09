@@ -50,7 +50,10 @@ const ProxyAssignment = sequelize.define('ProxyAssignment', {
       fields: ['slotId', 'date'],
       name: 'unique_proxy_slot_date'
     },
-    { fields: ['proxyFacultyId', 'date'] }
+    {
+      name: 'idx_proxy_assignment_proxy_date',
+      fields: ['proxyFacultyId', 'date', 'slotId']
+    }
   ]
 });
 

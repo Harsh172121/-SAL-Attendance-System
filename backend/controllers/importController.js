@@ -8,10 +8,11 @@
 const path = require('path');
 const { parse: parseCsv } = require('csv-parse/sync');
 const { XMLParser } = require('fast-xml-parser');
-const { sequelize, Class, Batch, Student, Teacher, Subject } = require('../models');
+const { sequelize, Class, Batch, Student, Teacher, Subject, Classroom } = require('../models');
 const { normalizeTeacherDepartments } = require('../utils/teacherDepartments');
 
 const ENTITY_CONFIG = {
+  classrooms: { label: 'classrooms', singular: 'classroom' },
   classes: { label: 'classes', singular: 'class' },
   batches: { label: 'batches', singular: 'batch' },
   students: { label: 'students', singular: 'student' },
@@ -214,6 +215,7 @@ const parseXmlRows = (content, entity) => {
  * The detector checks whether the first CSV field looks like a known header name.
  */
 const DEFAULT_CSV_COLUMNS = {
+  classrooms: ['classroomNumber'],
   students: ['enrollmentNo', 'name', 'email', 'phone', 'className', 'batchName'],
   teachers: ['employeeId', 'name', 'email', 'phone', 'department', 'departments', 'qualification'],
   classes: ['name', 'department', 'semester', 'academicYear', 'isActive'],
@@ -226,7 +228,8 @@ const KNOWN_HEADER_TOKENS = new Set([
   'studentname', 'email', 'phone', 'phonenumber', 'class', 'classname',
   'batch', 'batchname', 'batchforlabs', 'employeeid', 'department', 'departments',
   'semester', 'code', 'type', 'credits', 'password', 'isactive',
-  'academicyear', 'description', 'qualification', 'mobile', 'mobilenumber'
+  'academicyear', 'description', 'qualification', 'mobile', 'mobilenumber',
+  'classroom', 'classroomnumber', 'classroomno', 'roomnumber', 'roomno'
 ]);
 
 const looksLikeHeader = (firstField) => {
@@ -563,6 +566,40 @@ const importClasses = async (rows, transaction) => {
   return { created, updated };
 };
 
+const importClassrooms = async (rows, transaction) => {
+  let created = 0;
+  let updated = 0;
+  const resolvedRows = rows._rawRows
+    ? rows._rawRows.map((values) => ({ classroomNumber: values[0] }))
+    : rows;
+
+  for (let index = 0; index < resolvedRows.length; index += 1) {
+    const rowNumber = index + 1;
+    const row = resolvedRows[index];
+    const value = getTextValue(row, ['classroomNumber', 'classroomNo', 'classroom', 'roomNumber', 'roomNo', 'number']);
+    const classroomNumber = value === null ? NaN : Number(value);
+
+    if (!Number.isInteger(classroomNumber) || classroomNumber <= 0) {
+      throw createRowError(rowNumber, 'classroomNumber must be a positive whole number.');
+    }
+
+    const existing = await Classroom.findOne({
+      where: { classroomNumber },
+      transaction
+    });
+
+    if (existing) {
+      updated += 1;
+      continue;
+    }
+
+    await Classroom.create({ classroomNumber }, { transaction });
+    created += 1;
+  }
+
+  return { created, updated };
+};
+
 const importBatches = async (rows, transaction) => {
   let created = 0;
   let updated = 0;
@@ -826,6 +863,7 @@ const importSubjects = async (rows, transaction) => {
 };
 
 const importHandlers = {
+  classrooms: importClassrooms,
   classes: importClasses,
   batches: importBatches,
   students: importStudents,

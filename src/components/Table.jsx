@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 /**
  * SAL Education - College Attendance Management System
  * Table Component
@@ -21,6 +23,8 @@
  * @param {function} onDelete - Delete action handler
  * @param {boolean} showActions - Show action buttons
  * @param {string} emptyMessage - Message when no data
+ * @param {Array} selectedIds - IDs of selected rows
+ * @param {function} onSelectionChange - Selection change handler
  */
 const Table = ({ 
   columns, 
@@ -28,14 +32,58 @@ const Table = ({
   onEdit, 
   onDelete, 
   showActions = true,
-  emptyMessage = 'No data available'
+  emptyMessage = 'No data available',
+  selectedIds = [],
+  onSelectionChange
 }) => {
+  const selectable = typeof onSelectionChange === 'function';
+  const visibleIds = data.map((row, index) => row.id ?? index);
+  const selectedVisibleCount = visibleIds.filter((id) => selectedIds.includes(id)).length;
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+  const selectVisibleCheckbox = useRef(null);
+
+  useEffect(() => {
+    if (selectVisibleCheckbox.current) {
+      selectVisibleCheckbox.current.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected;
+    }
+  }, [selectedVisibleCount, allVisibleSelected]);
+
+  const toggleRow = (id) => {
+    onSelectionChange(
+      selectedIds.includes(id)
+        ? selectedIds.filter((selectedId) => selectedId !== id)
+        : [...selectedIds, id]
+    );
+  };
+
+  const toggleVisibleRows = () => {
+    if (allVisibleSelected) {
+      onSelectionChange(selectedIds.filter((id) => !visibleIds.includes(id)));
+      return;
+    }
+
+    onSelectionChange([...new Set([...selectedIds, ...visibleIds])]);
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
         {/* Table header */}
         <thead className="bg-gray-50">
           <tr>
+            {selectable && (
+              <th scope="col" className="w-12 px-4 py-3 text-left">
+                <input
+                  ref={selectVisibleCheckbox}
+                  type="checkbox"
+                  aria-label="Select all visible rows"
+                  checked={allVisibleSelected}
+                  disabled={visibleIds.length === 0}
+                  onChange={toggleVisibleRows}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+                />
+              </th>
+            )}
             {columns.map((column) => (
               <th
                 key={column.key}
@@ -63,7 +111,7 @@ const Table = ({
             // Empty state
             <tr>
               <td
-                colSpan={columns.length + (showActions ? 1 : 0)}
+                colSpan={columns.length + (showActions && (onEdit || onDelete) ? 1 : 0) + (selectable ? 1 : 0)}
                 className="px-6 py-12 text-center text-gray-500"
               >
                 <div className="flex flex-col items-center">
@@ -89,8 +137,19 @@ const Table = ({
             data.map((row, rowIndex) => (
               <tr 
                 key={row.id || rowIndex}
-                className="hover:bg-gray-50 transition-colors"
+                className={`${selectedIds.includes(row.id ?? rowIndex) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'} transition-colors`}
               >
+                {selectable && (
+                  <td className="w-12 px-4 py-4">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${row.name || row.enrollmentNo || row.employeeId || row.code || `row ${rowIndex + 1}`}`}
+                      checked={selectedIds.includes(row.id ?? rowIndex)}
+                      onChange={() => toggleRow(row.id ?? rowIndex)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+                    />
+                  </td>
+                )}
                 {columns.map((column) => (
                   <td
                     key={column.key}

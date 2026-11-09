@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard } from '../../components';
+import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard, BulkDeleteControl } from '../../components';
 import { teacherService, subjectService } from '../../services/dataService';
 import { importConfigs } from '../../constants/importConfigs';
 import { TEACHER_PRIORITY_OPTIONS, formatTeacherPriority } from '../../constants/roles';
@@ -40,6 +40,7 @@ const ManageTeachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [credentialsPopup, setCredentialsPopup] = useState({
@@ -132,6 +133,7 @@ const ManageTeachers = () => {
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       await teacherService.delete(deleteDialog.item.id);
+      setSelectedIds((ids) => ids.filter((id) => id !== deleteDialog.item.id));
       await loadData();
       toast.success('Teacher deleted successfully!');
     }
@@ -299,6 +301,15 @@ const ManageTeachers = () => {
           <div className="text-sm text-gray-500 flex items-center">
             Total: {filteredTeachers.length} teachers
           </div>
+          <BulkDeleteControl
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            deleteItem={teacherService.delete}
+            onDeleted={loadData}
+            itemLabel="teacher"
+            itemLabelPlural="teachers"
+            consequences="Teachers assigned to subjects or acting as class coordinators must be reassigned before they can be deleted."
+          />
         </div>
       </Card>
 
@@ -309,6 +320,8 @@ const ManageTeachers = () => {
           data={filteredTeachers}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="No teachers found. Click 'Add Teacher' to create one."
         />
       </Card>

@@ -32,7 +32,7 @@ const LeaveRequests = () => {
     try {
       const data = await leaveService.getLeaveRequests();
       setLeaves(data);
-    } catch (error) {
+    } catch {
       toast.error('Error loading leave requests');
     } finally {
       setLoading(false);

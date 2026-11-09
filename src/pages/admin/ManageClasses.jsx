@@ -15,7 +15,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard } from '../../components';
+import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard, BulkDeleteControl } from '../../components';
 import { classService, teacherService } from '../../services/dataService';
 import { importConfigs } from '../../constants/importConfigs';
 import { teacherHandlesDepartment } from '../../utils/teacherDepartments';
@@ -28,6 +28,7 @@ const ManageClasses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // State for delete confirmation
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
+  const [selectedIds, setSelectedIds] = useState([]);
   // State for form data (used for both add and edit)
   const [formData, setFormData] = useState({
     name: '',
@@ -124,6 +125,7 @@ const ManageClasses = () => {
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       await classService.delete(deleteDialog.item.id);
+      setSelectedIds((ids) => ids.filter((id) => id !== deleteDialog.item.id));
       await loadClasses();
       toast.success('Class deleted successfully!');
     }
@@ -238,6 +240,15 @@ const ManageClasses = () => {
           <div className="text-sm text-gray-500 flex items-center">
             Total: {filteredClasses.length} classes
           </div>
+          <BulkDeleteControl
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            deleteItem={classService.delete}
+            onDeleted={loadClasses}
+            itemLabel="class"
+            itemLabelPlural="classes"
+            consequences="Classes with students or assigned subjects cannot be deleted. Batches under deleted classes are removed too."
+          />
         </div>
       </Card>
 
@@ -248,6 +259,8 @@ const ManageClasses = () => {
           data={filteredClasses}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="No classes found. Click 'Add Class' to create one."
         />
       </Card>

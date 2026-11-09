@@ -67,7 +67,7 @@ const Teacher = sequelize.define('Teacher', {
     }
   },
   departments: {
-    type: DataTypes.JSON,
+    type: DataTypes.JSONB,
     allowNull: true,
     get() {
       const normalized = normalizeTeacherDepartments(this.getDataValue('departments'));

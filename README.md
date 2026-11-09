@@ -2,7 +2,7 @@
 
 ![Project Poster](projectlogo.png)
 
-A comprehensive College Attendance Management System built with React (Vite), Node.js (Express), and MySQL (Sequelize).
+A comprehensive College Attendance Management System built with React (Vite), Node.js (Express), and PostgreSQL (Sequelize).
 
 
 ## 🚀 Features
@@ -21,7 +21,7 @@ A comprehensive College Attendance Management System built with React (Vite), No
 
 - **Frontend**: React, Tailwind CSS, Vite
 - **Backend**: Node.js, Express.js
-- **Database**: MySQL, Sequelize ORM
+- **Database**: PostgreSQL, Sequelize ORM v6
 - **Authentication**: JWT (JSON Web Tokens) with HTTP-only cookies
 
 ---
@@ -32,7 +32,7 @@ Follow these steps to get the project running on your local machine.
 
 ### 1. Prerequisites
 - [Node.js](https://nodejs.org/) (v16 or higher)
-- [MySQL Server](https://dev.mysql.com/downloads/installer/) (e.g., XAMPP, MySQL Workbench)
+- PostgreSQL server and client tools
 
 ### 2. Clone the Repository
 ```bash
@@ -53,33 +53,41 @@ npm install
 cd ..
 ```
 
-### 4. Database Setup
-1. Open your MySQL client (XAMPP/MySQL Workbench).
-2. Create a new database named `sal_attendance`:
-   ```sql
-   CREATE DATABASE sal_attendance;
-   ```
-
-### 5. Environment Variables
+### 4. Environment Variables
 1. Go to the `backend` folder.
 2. Create a `.env` file from the `.env.example` file:
    ```bash
    cp .env.example .env
    ```
-3. Update the `.env` file with your MySQL credentials:
+3. Set PostgreSQL connection values in `.env`:
    ```env
-   DB_USER=root
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=sal_attendance
+   DB_USER=postgres
    DB_PASSWORD=your_password
    JWT_SECRET=any_random_secret_string
    ```
 
-### 6. Seed the Database
-Run the seeder script to populate the database with initial data (Admin, Teachers, Classes, etc.).
+The initial PostgreSQL schema migration is in `backend/migrations/001_initial_schema.js`. The backend does not create or alter tables at startup; after confirming the target database is empty and configured, apply the versioned schema with `cd backend && npm run db:migrate`. Any MySQL data migration remains a separate future task.
+
+### Database troubleshooting
+- `Missing required PostgreSQL configuration`: check that `DB_NAME`, `DB_USER`, and `DB_PASSWORD` are present in `backend/.env` (an empty password is allowed if your local PostgreSQL authentication uses it).
+- Connection refused: confirm the PostgreSQL service is running and `DB_HOST` / `DB_PORT` point to it.
+- Authentication failed: verify the PostgreSQL role and password with the database administrator; the application does not print credentials.
+- Missing relation/table: the database has not had its migrations applied. Startup does not create tables. See [`backend/migrations/README.md`](backend/migrations/README.md).
+- The PostgreSQL database itself must be created separately before migrations or application use.
+
+### 5. Schema and sample data
+Do not run the seeder until a PostgreSQL schema migration has been reviewed and applied. The seeder is destructive: when intentionally used, it clears application tables before adding demo data.
+
 ```bash
 cd backend
-npm run seed
+npm run seed -- --reset
 cd ..
 ```
+
+The old `reset-users.js` utility is retired because it disabled foreign-key checks and changed a required column to nullable.
 
 ---
 

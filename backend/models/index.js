@@ -13,6 +13,7 @@ const Student = require('./Student');
 const Class = require('./Class');
 const Batch = require('./Batch');
 const Subject = require('./Subject');
+const SubjectClass = require('./SubjectClass');
 const Classroom = require('./Classroom');
 const Attendance = require('./Attendance');
 const LectureSlot = require('./LectureSlot');
@@ -43,13 +44,13 @@ Student.belongsTo(Batch, { foreignKey: 'batchId', as: 'batch' });
 
 // Subject <-> Class many-to-many via subject_classes
 Subject.belongsToMany(Class, {
-  through: 'SubjectClasses',
+  through: { model: SubjectClass, unique: false },
   foreignKey: 'subjectId',
   otherKey: 'classId',
   as: 'classes'
 });
 Class.belongsToMany(Subject, {
-  through: 'SubjectClasses',
+  through: { model: SubjectClass, unique: false },
   foreignKey: 'classId',
   otherKey: 'subjectId',
   as: 'subjects'
@@ -135,6 +136,7 @@ module.exports = {
   Class,
   Batch,
   Subject,
+  SubjectClass,
   Classroom,
   Attendance,
   LectureSlot,

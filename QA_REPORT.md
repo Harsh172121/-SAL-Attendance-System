@@ -1,7 +1,7 @@
 # SAL Education Attendance Management System - QA Report
 
 **Date:** 2026-04-21  
-**Tech Stack:** React (Vite) + Node.js/Express + MySQL  
+**Tech Stack at report time:** React (Vite) + Node.js/Express + MySQL (the active backend was later converted to PostgreSQL)
 **Scope:** Full system QA covering authentication, attendance, leave management, RBAC, reports, and API security
 
 ---

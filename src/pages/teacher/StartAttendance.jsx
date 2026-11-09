@@ -6,7 +6,7 @@
  * for attendance marking without manual selection.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { Card, Button } from '../../components';
 import { lectureSlotService, attendanceService } from '../../services/dataService';
@@ -23,18 +23,47 @@ const StartAttendance = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [slotDetails, setSlotDetails] = useState(null);
+  const [studentLoadError, setStudentLoadError] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
-  useEffect(() => {
-    detectCurrentLecture();
+  const loadStudents = useCallback(async (slot) => {
+    setStudentsLoading(true);
+    setStudentLoadError('');
+    try {
+      const targetDate = new Date().toISOString().split('T')[0];
+      const context = await attendanceService.getSlotAttendanceContext(slot.id, targetDate);
+      setSlotDetails(context.slotDetails);
+      const studentList = context.students || [];
+      setStudents(studentList);
+
+      // Prefill from existing attendance, otherwise Not Marked
+      const defaultAttendance = {};
+      studentList.forEach((s) => {
+        const studentId = s.studentId ?? s.id;
+        const status = (s.attendanceStatus || '').toLowerCase();
+        defaultAttendance[studentId] = ['present', 'absent'].includes(status) ? status : 'not_marked';
+      });
+      setAttendance(defaultAttendance);
+    } catch (error) {
+      console.error('Error loading students:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error loading student list';
+      setStudents([]);
+      setAttendance({});
+      setStudentLoadError(errorMessage);
+    } finally {
+      setStudentsLoading(false);
+    }
   }, []);
 
-  const detectCurrentLecture = async () => {
+  const detectCurrentLecture = useCallback(async () => {
     setLoading(true);
     setCurrentSlot(null);
     setActiveSlots([]);
     setStudents([]);
     setAttendance({});
     setSlotDetails(null);
+    setStudentLoadError('');
+    setSubmitError('');
     setSubmitted(false);
     setMessage('');
 
@@ -51,36 +80,16 @@ const StartAttendance = () => {
       } else {
         setMessage(result.message || 'No lecture scheduled at this time.');
       }
-    } catch (error) {
+    } catch {
       setActiveSlots([]);
       setMessage('Error detecting current lecture.');
     }
     setLoading(false);
-  };
+  }, [loadStudents]);
 
-  const loadStudents = async (slot) => {
-    setStudentsLoading(true);
-    try {
-      const targetDate = new Date().toISOString().split('T')[0];
-      const context = await attendanceService.getSlotAttendanceContext(slot.id, targetDate);
-      setSlotDetails(context.slotDetails);
-      const studentList = context.students || [];
-      setStudents(studentList);
-
-      // Prefill from existing attendance, otherwise Not Marked
-      const defaultAttendance = {};
-      studentList.forEach((s) => {
-        const status = (s.attendanceStatus || '').toLowerCase();
-        defaultAttendance[s.studentId] = ['present', 'absent'].includes(status) ? status : 'not_marked';
-      });
-      setAttendance(defaultAttendance);
-    } catch (error) {
-      console.error('Error loading students:', error);
-      toast.error('Error loading student list');
-    } finally {
-      setStudentsLoading(false);
-    }
-  };
+  useEffect(() => {
+    detectCurrentLecture();
+  }, [detectCurrentLecture]);
 
   const handleSlotSelection = async (slot) => {
     setLoading(true);
@@ -88,6 +97,8 @@ const StartAttendance = () => {
     setStudents([]);
     setAttendance({});
     setSlotDetails(null);
+    setStudentLoadError('');
+    setSubmitError('');
     setSubmitted(false);
     setMessage('');
 
@@ -114,20 +125,26 @@ const StartAttendance = () => {
 
   const handleSubmit = async () => {
     if (!currentSlot || students.length === 0 || slotDetails?.isLocked) return;
+    const attendanceData = students.map((student) => {
+      const studentId = student.studentId ?? student.id;
+      return {
+        studentId: Number(studentId),
+        status: attendance[studentId]
+      };
+    });
+    if (attendanceData.some((record) => !['present', 'absent'].includes(record.status))) {
+      const message = 'Mark every student present or absent before submitting';
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+
+    setSubmitError('');
     setSubmitting(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const attendanceData = Object.entries(attendance).map(([studentId, status]) => ({
-        studentId: parseInt(studentId),
-        status
-      }));
-
       await attendanceService.saveSlotAttendance(Number(currentSlot.id), {
-        date: today,
-        attendance: attendanceData.map((item) => ({
-          ...item,
-          status: item.status === 'absent' ? 'absent' : 'present'
-        }))
+        date: slotDetails?.date || new Date().toISOString().split('T')[0],
+        attendance: attendanceData
       });
 
       const presentCount = Object.values(attendance).filter(s => s === 'present').length;
@@ -135,9 +152,15 @@ const StartAttendance = () => {
       setSubmitted(true);
       setSlotDetails((prev) => (prev ? { ...prev, isLocked: true } : prev));
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error marking attendance');
+      const errorMessage = error.response?.data?.message || error.message || 'Error marking attendance';
+      setSubmitError(errorMessage);
+      // The API interceptor already displays HTTP and network errors.
+      if (!error.response && !error.request) {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   if (loading) {
@@ -350,7 +373,19 @@ const StartAttendance = () => {
                 <p className="ml-3 text-gray-600">Loading students...</p>
               </div>
             ) : students.length === 0 ? (
-              <p className="text-center py-8 text-gray-500">No students assigned to this class</p>
+              studentLoadError ? (
+                <div className="py-8 text-center">
+                  <p className="text-red-600">Could not load students: {studentLoadError}</p>
+                  <Button
+                    onClick={() => loadStudents(currentSlot)}
+                    className="mt-4 px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900"
+                  >
+                    Retry Loading Students
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-center py-8 text-gray-500">No active students assigned to this class or batch.</p>
+              )
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -367,7 +402,7 @@ const StartAttendance = () => {
                   </thead>
                   <tbody>
                     {students.map((student, index) => (
-                      <tr key={student.studentId || student.id} className="border-b hover:bg-gray-50">
+                      <tr key={student.studentId ?? student.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4 text-gray-500">{index + 1}</td>
                         <td className="py-3 px-4 font-medium">{student.enrollmentNo}</td>
                         <td className="py-3 px-4">{student.name}</td>
@@ -376,19 +411,19 @@ const StartAttendance = () => {
                         )}
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={() => cycleStatus(student.studentId || student.id)}
+                            onClick={() => cycleStatus(student.studentId ?? student.id)}
                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                              attendance[student.studentId] === 'present'
+                              attendance[student.studentId ?? student.id] === 'present'
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : attendance[student.studentId] === 'absent'
+                                : attendance[student.studentId ?? student.id] === 'absent'
                                 ? 'bg-red-100 text-red-700 hover:bg-red-200'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                             disabled={slotDetails?.isLocked}
                           >
-                            {attendance[student.studentId] === 'present'
+                            {attendance[student.studentId ?? student.id] === 'present'
                               ? 'Present'
-                              : attendance[student.studentId] === 'absent'
+                              : attendance[student.studentId ?? student.id] === 'absent'
                               ? 'Absent'
                               : 'Not Marked'}
                           </button>
@@ -403,14 +438,17 @@ const StartAttendance = () => {
 
           {/* Submit */}
           {students.length > 0 && (
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-8 py-3 bg-blue-800 text-white rounded-lg hover:bg-blue-900 font-medium disabled:opacity-50"
-              >
-                {submitting ? 'Submitting...' : 'Submit Attendance'}
-              </Button>
+            <div className="space-y-3">
+              {submitError && <p className="text-right text-sm text-red-600" role="alert">{submitError}</p>}
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting || slotDetails?.isLocked}
+                  className="px-8 py-3 bg-blue-800 text-white rounded-lg hover:bg-blue-900 font-medium disabled:opacity-50"
+                >
+                  {submitting ? 'Submitting...' : 'Submit Attendance'}
+                </Button>
+              </div>
             </div>
           )}
         </>

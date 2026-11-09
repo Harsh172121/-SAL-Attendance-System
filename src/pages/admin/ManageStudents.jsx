@@ -15,7 +15,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard } from '../../components';
+import { Card, Button, Table, Modal, Input, Select, ConfirmDialog, DataImportCard, BulkDeleteControl } from '../../components';
 import { studentService, classService, batchService } from '../../services/dataService';
 import { importConfigs } from '../../constants/importConfigs';
 
@@ -34,6 +34,7 @@ const ManageStudents = () => {
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [credentialsPopup, setCredentialsPopup] = useState({
     isOpen: false,
@@ -143,6 +144,7 @@ const ManageStudents = () => {
     if (deleteDialog.item) {
       try {
         await studentService.delete(deleteDialog.item.id);
+        setSelectedIds((ids) => ids.filter((id) => id !== deleteDialog.item.id));
         await loadData();
         toast.success('Student deleted successfully!');
       } catch (error) {
@@ -275,6 +277,15 @@ const ManageStudents = () => {
           <div className="text-sm text-gray-500 flex items-center justify-end">
             Showing {displayStudents.length} of {students.length} students
           </div>
+          <BulkDeleteControl
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            deleteItem={studentService.delete}
+            onDeleted={loadData}
+            itemLabel="student"
+            itemLabelPlural="students"
+            consequences="Attendance records belonging to deleted students are removed too."
+          />
         </div>
       </Card>
 
@@ -285,6 +296,8 @@ const ManageStudents = () => {
           data={displayStudents}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="No students found. Click 'Add Student' to create one."
         />
       </Card>

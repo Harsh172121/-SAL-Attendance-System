@@ -1,27 +1,19 @@
 /**
- * SAL Education - Database Configuration
- * 
- * This file handles MySQL connection using Sequelize.
- * VIVA NOTE: Sequelize is an ORM (Object Relational Mapping) library
- * that provides schema validation and easy query building for SQL databases.
+ * PostgreSQL connection configured through environment variables.
+ * Schema changes are managed separately; connecting never creates or alters tables.
  */
 
 const { Sequelize } = require('sequelize');
-const { ensureSchema } = require('../utils/ensureSchema');
 
-/**
- * Create Sequelize instance
- * Uses MySQL as the database
- */
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'sal_attendance',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || '',
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    dialect: 'mysql',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    port: Number(process.env.DB_PORT || 5432),
+    dialect: 'postgres',
+    logging: false,
     pool: {
       max: 5,
       min: 0,
@@ -31,22 +23,29 @@ const sequelize = new Sequelize(
   }
 );
 
-/**
- * Connect to MySQL Database
- * Uses async/await for cleaner error handling
- */
+const validateDatabaseConfig = () => {
+  const missing = ['DB_NAME', 'DB_USER', 'DB_PASSWORD']
+    .filter((key) => process.env[key] === undefined);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required PostgreSQL configuration: ${missing.join(', ')}`);
+  }
+
+  const port = Number(process.env.DB_PORT || 5432);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('DB_PORT must be an integer between 1 and 65535');
+  }
+};
+
 const connectDB = async () => {
   try {
+    validateDatabaseConfig();
     await sequelize.authenticate();
-    console.log(`✅ MySQL Connected: ${process.env.DB_HOST || 'localhost'}`);
-    
-    // Sync model definitions without destructive alter operations.
-    await sequelize.sync();
-    await ensureSchema(sequelize);
-    console.log('✅ Database tables synced');
+    console.log(`✅ PostgreSQL connected: ${process.env.DB_HOST || 'localhost'}`);
   } catch (error) {
-    console.error(`❌ MySQL Connection Error: ${error.message}`);
-    process.exit(1); // Exit process with failure
+    // Do not print connection strings or credential values.
+    console.error(`❌ PostgreSQL connection failed (${error.code || error.name || 'Error'})`);
+    throw error;
   }
 };
 

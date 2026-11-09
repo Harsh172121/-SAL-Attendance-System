@@ -2,7 +2,7 @@
  * SAL Education - College Attendance Management System
  * Authentication Context
  * Manages user authentication state across the application
- * Connected to MongoDB backend via REST API
+ * Connected to the PostgreSQL-backed API via REST
  */
 
 import { createContext, useContext, useState, useEffect } from 'react';

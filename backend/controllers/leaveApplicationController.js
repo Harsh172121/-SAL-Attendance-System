@@ -128,9 +128,17 @@ const upsertLeaveAttendance = async ({ student, subject, type, date, attendanceM
   return 1;
 };
 
-const createLeaveAttendanceRecords = async ({ leave, attendanceMarkerId, transaction }) => {
+const createLeaveAttendanceRecords = async ({ leave, student, attendanceMarkerId, transaction }) => {
   const subjects = await Subject.findAll({
-    where: { classId: leave.student.classId, isActive: true },
+    where: { isActive: true },
+    include: [{
+      model: Class,
+      as: 'classes',
+      attributes: ['id'],
+      through: { attributes: [] },
+      where: { id: Number(student.classId) },
+      required: true
+    }],
     transaction
   });
 
@@ -145,7 +153,7 @@ const createLeaveAttendanceRecords = async ({ leave, attendanceMarkerId, transac
       for (const subject of subjects) {
         if (subject.type === 'theory' || subject.type === 'theory+lab') {
           leaveRecordsCreated += await upsertLeaveAttendance({
-            student: leave.student,
+            student,
             subject,
             type: 'theory',
             date,
@@ -154,9 +162,9 @@ const createLeaveAttendanceRecords = async ({ leave, attendanceMarkerId, transac
           });
         }
 
-        if ((subject.type === 'lab' || subject.type === 'theory+lab') && leave.student.batchId) {
+        if ((subject.type === 'lab' || subject.type === 'theory+lab') && student.batchId) {
           leaveRecordsCreated += await upsertLeaveAttendance({
-            student: leave.student,
+            student,
             subject,
             type: 'lab',
             date,
@@ -186,7 +194,6 @@ const processLeaveReview = async ({
 
   try {
     const leave = await LeaveApplication.findByPk(leaveId, {
-      include: [{ model: Student, as: 'student' }],
       transaction,
       lock: transaction.LOCK.UPDATE
     });
@@ -224,6 +231,21 @@ const processLeaveReview = async ({
       };
     }
 
+    let student = null;
+    if (status === 'approved') {
+      student = await Student.findByPk(leave.studentId, { transaction });
+      if (!student) {
+        await transaction.rollback();
+        return {
+          statusCode: 404,
+          payload: {
+            success: false,
+            message: 'Student for this leave request was not found'
+          }
+        };
+      }
+    }
+
     const decisionDate = new Date();
 
     await leave.update({
@@ -238,6 +260,7 @@ const processLeaveReview = async ({
     if (status === 'approved') {
       leaveRecordsCreated = await createLeaveAttendanceRecords({
         leave,
+        student,
         attendanceMarkerId,
         transaction
       });
