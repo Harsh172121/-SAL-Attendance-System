@@ -20,6 +20,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Button, Select, Input } from '../../components';
 import { attendanceService } from '../../services/dataService';
+import { getCampusDate } from '../../utils/dateOnly';
 
 const MarkAttendance = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const MarkAttendance = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getCampusDate());
   const [submitError, setSubmitError] = useState('');
   
   // Data state
@@ -112,7 +113,7 @@ const MarkAttendance = () => {
     }
 
     const inferredType = queryType || (queryBatchId ? 'lab' : 'theory');
-    const resolvedDate = queryDate || new Date().toISOString().split('T')[0];
+    const resolvedDate = queryDate || getCampusDate();
 
     setSelectedSubject(querySubjectId);
     setSelectedType(inferredType);
@@ -400,7 +401,7 @@ const MarkAttendance = () => {
               setSelectedDate(e.target.value);
               setShowStudentList(false);
             }}
-            max={new Date().toISOString().split('T')[0]}
+            max={getCampusDate()}
             disabled={isSlotMode}
             required
           />

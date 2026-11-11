@@ -277,8 +277,12 @@ const markAttendance = async (req, res) => {
       validatedBatchId = batch.id;
     }
 
-    // Normalize date to DATEONLY format (YYYY-MM-DD)
-    const attendanceDate = new Date(date).toISOString().split('T')[0];
+    // HTML date inputs already send DATEONLY strings. Preserve the selected
+    // calendar date instead of converting it through a timestamp/timezone.
+    if (!isDateOnly(date)) {
+      return res.status(400).json({ success: false, message: 'Date must be a valid YYYY-MM-DD value' });
+    }
+    const attendanceDate = date;
 
     const results = {
       created: 0,

@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Button, Modal, ConfirmDialog, TimeInput } from '../../components';
 import { lectureSlotService, attendanceService, classroomService, proxyService } from '../../services/dataService';
 import { formatTo12Hour } from '../../utils/timeFormat';
+import { getCampusDate } from '../../utils/dateOnly';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -34,7 +35,7 @@ const ManageLectureSlots = () => {
   const [myProxyLectures, setMyProxyLectures] = useState([]);
   const [proxyForm, setProxyForm] = useState({
     slotId: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getCampusDate(),
     proxyFacultyId: '',
     reason: ''
   });
@@ -188,7 +189,7 @@ const ManageLectureSlots = () => {
   };
 
   const openProxyModal = async (slot) => {
-    const defaultDate = new Date().toISOString().split('T')[0];
+    const defaultDate = getCampusDate();
     setProxyForm({
       slotId: slot.id,
       date: defaultDate,
@@ -317,7 +318,7 @@ const ManageLectureSlots = () => {
                 <h3 className="text-lg font-semibold text-blue-800 mb-3 border-b pb-2">{day}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {daySlots.map(slot => {
-                    const todayDate = new Date().toISOString().split('T')[0];
+                    const todayDate = getCampusDate();
                     const todayStatus = getSlotRequestStatusForDate(slot.id, todayDate);
                     const isTodayBlocked = todayStatus === 'pending' || todayStatus === 'approved';
 
@@ -353,7 +354,7 @@ const ManageLectureSlots = () => {
                               <button
                                 onClick={() =>
                                   navigate(
-                                    `/teacher/mark-attendance?subjectId=${slot.subjectId}&classId=${slot.classId}&slotId=${slot.id}&date=${new Date().toISOString().split('T')[0]}&type=${slot.type}${slot.batchId ? `&batchId=${slot.batchId}` : ''}&subjectName=${encodeURIComponent(slot.subject?.name || '')}&subjectCode=${encodeURIComponent(slot.subject?.code || '')}`
+                                    `/teacher/mark-attendance?subjectId=${slot.subjectId}&classId=${slot.classId}&slotId=${slot.id}&date=${getCampusDate()}&type=${slot.type}${slot.batchId ? `&batchId=${slot.batchId}` : ''}&subjectName=${encodeURIComponent(slot.subject?.name || '')}&subjectCode=${encodeURIComponent(slot.subject?.code || '')}`
                                   )
                                 }
                                 className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
@@ -580,7 +581,7 @@ const ManageLectureSlots = () => {
               value={proxyForm.date}
               onChange={(e) => handleProxyDateChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min={new Date().toISOString().split('T')[0]}
+              min={getCampusDate()}
               required
             />
           </div>

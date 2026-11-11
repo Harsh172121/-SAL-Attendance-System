@@ -15,6 +15,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Select, Input, Button } from '../../components';
 import { attendanceService } from '../../services/dataService';
+import { formatDateOnly } from '../../utils/dateOnly';
 
 const ViewAttendance = () => {
   // Filter state
@@ -306,7 +307,7 @@ const ViewAttendance = () => {
                 <div className="flex justify-between items-center mb-4 pb-2 border-b">
                   <div>
                     <h3 className="font-semibold text-gray-800">
-                      {new Date(date).toLocaleDateString('en-US', {
+                      {formatDateOnly(date, 'en-US', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
