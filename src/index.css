@@ -37,59 +37,116 @@ body {
    Proxy request notifications (sidebar-anchored)
    ============================================================ */
 
+/* ---- Entrance animation: slides in from the left with a spring bounce ---- */
 @keyframes proxy-popup-in {
   0% {
     opacity: 0;
-    transform: translateX(-10px) scale(0.96);
+    transform: translateX(-16px) scale(0.94);
+    filter: blur(2px);
   }
-  60% {
+  55% {
     opacity: 1;
-    transform: translateX(2px) scale(1.01);
+    transform: translateX(4px) scale(1.015);
+    filter: blur(0);
+  }
+  80% {
+    transform: translateX(-2px) scale(0.998);
   }
   100% {
     opacity: 1;
     transform: translateX(0) scale(1);
+    filter: blur(0);
   }
 }
 
+/* ---- Exit animation: fades out to the left ---- */
+@keyframes proxy-popup-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.95);
+    pointer-events: none;
+  }
+}
+
+/* ---- Pulsing red halo around the badge number ---- */
 @keyframes proxy-badge-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0);
   }
 }
 
+/* ---- Ripple ring on the bell icon ---- */
 @keyframes proxy-icon-ring {
   0% {
-    opacity: 0.75;
-    transform: scale(0.9);
+    opacity: 0.8;
+    transform: scale(0.88);
   }
-  70% {
+  65% {
     opacity: 0;
-    transform: scale(1.55);
+    transform: scale(1.6);
   }
   100% {
     opacity: 0;
-    transform: scale(1.55);
+    transform: scale(1.6);
   }
 }
 
+/* ---- Subtle shimmer on the sidebar link when there are unread requests ---- */
 @keyframes proxy-link-glow {
   0%,
   100% {
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+    background-color: transparent;
+    box-shadow: none;
   }
   50% {
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.55);
+    background-color: rgba(59, 130, 246, 0.07);
+    box-shadow: inset 0 0 0 1.5px rgba(59, 130, 246, 0.4);
   }
 }
 
+/* ---- Animated progress bar that drains while the popup is visible ---- */
+@keyframes proxy-progress-drain {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* ---- Gentle shimmer sweep across the top accent bar ---- */
+@keyframes proxy-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* ---- Bell shake when a truly new request arrives ---- */
+@keyframes proxy-bell-shake {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(-18deg); }
+  30%  { transform: rotate(16deg); }
+  45%  { transform: rotate(-12deg); }
+  60%  { transform: rotate(10deg); }
+  75%  { transform: rotate(-6deg); }
+  90%  { transform: rotate(4deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* =========================================================
+   Utility classes used by ProxyNotificationPopup
+   ========================================================= */
+
 .proxy-popup {
-  animation: proxy-popup-in 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: proxy-popup-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: left center;
+}
+
+.proxy-popup-exit {
+  animation: proxy-popup-out 220ms ease-in forwards;
 }
 
 .proxy-badge-pulse {
@@ -97,19 +154,47 @@ body {
 }
 
 .proxy-icon-ring {
-  animation: proxy-icon-ring 2.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  animation: proxy-icon-ring 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
 }
 
 .proxy-link-highlight {
-  animation: proxy-link-glow 2.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+  animation: proxy-link-glow 2.6s ease-in-out infinite;
 }
 
+.proxy-progress-bar {
+  animation: proxy-progress-drain linear forwards;
+}
+
+.proxy-shimmer-bar {
+  background: linear-gradient(
+    90deg,
+    #1d4ed8 0%,
+    #3b82f6 30%,
+    #60a5fa 50%,
+    #3b82f6 70%,
+    #1d4ed8 100%
+  );
+  background-size: 200% auto;
+  animation: proxy-shimmer 2.5s linear infinite;
+}
+
+.proxy-bell-shake {
+  animation: proxy-bell-shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .proxy-popup,
+  .proxy-popup-exit,
   .proxy-badge-pulse,
   .proxy-icon-ring,
-  .proxy-link-highlight {
+  .proxy-link-highlight,
+  .proxy-progress-bar,
+  .proxy-shimmer-bar,
+  .proxy-bell-shake {
     animation: none !important;
+    transition: none !important;
   }
 }
 
