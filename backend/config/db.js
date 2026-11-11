@@ -4,6 +4,7 @@
  */
 
 const { Sequelize } = require('sequelize');
+const pg = require('pg');
 const dotenv = require('dotenv');
 const path = require('path');
 
@@ -27,6 +28,7 @@ const pool = {
 const sequelize = connectionString
   ? new Sequelize(connectionString, {
     dialect: 'postgres',
+    dialectModule: pg,
     logging: false,
     pool
   })
@@ -38,6 +40,7 @@ const sequelize = connectionString
       host: process.env.DB_HOST || 'localhost',
       port: Number(process.env.DB_PORT || 5432),
       dialect: 'postgres',
+      dialectModule: pg,
       logging: false,
       pool
     }
