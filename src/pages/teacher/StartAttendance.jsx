@@ -23,14 +23,17 @@ const StartAttendance = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [slotDetails, setSlotDetails] = useState(null);
+  const [currentDate, setCurrentDate] = useState('');
   const [studentLoadError, setStudentLoadError] = useState('');
   const [submitError, setSubmitError] = useState('');
 
-  const loadStudents = useCallback(async (slot) => {
+  const loadStudents = useCallback(async (slot, attendanceDate) => {
     setStudentsLoading(true);
     setStudentLoadError('');
     try {
-      const targetDate = new Date().toISOString().split('T')[0];
+      const targetDate = attendanceDate || new Intl.DateTimeFormat('en-CA', {
+        timeZone: import.meta.env.VITE_APP_TIMEZONE || 'Asia/Kolkata'
+      }).format(new Date());
       const context = await attendanceService.getSlotAttendanceContext(slot.id, targetDate);
       setSlotDetails(context.slotDetails);
       const studentList = context.students || [];
@@ -69,6 +72,7 @@ const StartAttendance = () => {
 
     try {
       const result = await lectureSlotService.getCurrent();
+      if (result.date) setCurrentDate(result.date);
 
       if (result.requiresSelection && (result.slots || []).length > 0) {
         setActiveSlots(result.slots);
@@ -76,7 +80,7 @@ const StartAttendance = () => {
       } else if (result.data) {
         setCurrentSlot(result.data);
         setActiveSlots(result.slots || [result.data]);
-        await loadStudents(result.data);
+        await loadStudents(result.data, result.date);
       } else {
         setMessage(result.message || 'No lecture scheduled at this time.');
       }
@@ -143,7 +147,7 @@ const StartAttendance = () => {
     setSubmitting(true);
     try {
       await attendanceService.saveSlotAttendance(Number(currentSlot.id), {
-        date: slotDetails?.date || new Date().toISOString().split('T')[0],
+        date: slotDetails?.date || currentDate,
         attendance: attendanceData
       });
 

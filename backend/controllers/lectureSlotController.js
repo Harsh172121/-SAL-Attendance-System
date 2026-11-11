@@ -21,6 +21,30 @@ const lectureSlotIncludes = [
   { model: Classroom, as: 'classroom', attributes: ['id', 'classroomNumber'] }
 ];
 
+const getCampusClock = (date = new Date()) => {
+  const timeZone = process.env.APP_TIMEZONE || 'Asia/Kolkata';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    weekday: 'long',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(date).reduce((result, part) => {
+    result[part.type] = part.value;
+    return result;
+  }, {});
+
+  return {
+    day: parts.weekday,
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}:${parts.second}`
+  };
+};
+
 const buildOverlapWhere = ({ facultyId, dayOfWeek, startTime, endTime, excludeId }) => {
   const where = {
     facultyId,
@@ -317,16 +341,14 @@ const getCurrentSlot = async (req, res) => {
   try {
     const facultyId = req.user.id;
 
-    const now = new Date();
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentDay = days[now.getDay()];
-    const currentTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+    const { day: currentDay, time: currentTime, date: currentDate } = getCampusClock();
 
     if (currentDay === 'Sunday') {
       return res.status(200).json({
         success: true,
         data: null,
         slots: [],
+        date: currentDate,
         message: 'No lectures scheduled on Sunday'
       });
     }
@@ -347,7 +369,6 @@ const getCurrentSlot = async (req, res) => {
       ]
     });
 
-    const currentDate = now.toISOString().split('T')[0];
     const proxyAssignments = await ProxyAssignment.findAll({
       where: {
         proxyFacultyId: facultyId,
@@ -368,9 +389,13 @@ const getCurrentSlot = async (req, res) => {
       ]
     });
 
+    const currentSlotIds = new Set(currentSlots.map((slot) => Number(slot.id)));
     proxyAssignments.forEach((assignment) => {
       if (assignment.slot) {
-        currentSlots.push(assignment.slot);
+        if (!currentSlotIds.has(Number(assignment.slot.id))) {
+          currentSlots.push(assignment.slot);
+          currentSlotIds.add(Number(assignment.slot.id));
+        }
       }
     });
 
@@ -379,6 +404,7 @@ const getCurrentSlot = async (req, res) => {
         success: true,
         data: null,
         slots: [],
+        date: currentDate,
         message: 'No lecture scheduled at this time'
       });
     }
@@ -388,6 +414,7 @@ const getCurrentSlot = async (req, res) => {
         success: true,
         data: null,
         slots: currentSlots,
+        date: currentDate,
         requiresSelection: true,
         message: 'Multiple lecture slots are active right now. Select the correct batch to start attendance.'
       });
@@ -397,6 +424,7 @@ const getCurrentSlot = async (req, res) => {
       success: true,
       data: currentSlots[0],
       slots: currentSlots,
+      date: currentDate,
       message: 'Current lecture found'
     });
   } catch (error) {
