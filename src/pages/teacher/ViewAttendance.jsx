@@ -12,13 +12,11 @@
  * for subjects assigned to the logged-in teacher.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Select, Input, Button } from '../../components';
-import { useAuth } from '../../context/AuthContext';
 import { attendanceService } from '../../services/dataService';
 
 const ViewAttendance = () => {
-  const { user } = useAuth();
   // Filter state
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -28,6 +26,8 @@ const ViewAttendance = () => {
   const [assignedSubjects, setAssignedSubjects] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [viewMode, setViewMode] = useState('date'); // 'date' or 'summary'
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   /**
    * Load teacher's assigned subjects
@@ -65,11 +65,15 @@ const ViewAttendance = () => {
   /**
    * Search attendance records
    */
-  const searchAttendance = async () => {
+  const searchAttendance = useCallback(async () => {
     if (!selectedSubject) {
+      setAttendanceData([]);
       return;
     }
 
+    setIsSearching(true);
+    setSearchError('');
+    setAttendanceData([]);
     try {
       // Build query params
       const params = {};
@@ -99,8 +103,21 @@ const ViewAttendance = () => {
     } catch (error) {
       console.error('Error searching attendance:', error);
       setAttendanceData([]);
+      setSearchError(error.response?.data?.message || 'Could not load attendance. Please try again.');
+    } finally {
+      setIsSearching(false);
     }
-  };
+  }, [selectedSubject, selectedType, selectedDate]);
+
+  // Refresh the query whenever any selected filter changes; the Search button
+  // remains available for an explicit retry.
+  useEffect(() => {
+    if (selectedSubject) searchAttendance();
+    else {
+      setAttendanceData([]);
+      setSearchError('');
+    }
+  }, [selectedSubject, selectedType, selectedDate, searchAttendance]);
 
   /**
    * Get unique dates from attendance data
@@ -194,6 +211,7 @@ const ViewAttendance = () => {
               setSelectedSubject(e.target.value);
               setSelectedType('');
               setAttendanceData([]);
+              setSearchError('');
             }}
             options={subjectOptions}
             placeholder="Select subject"
@@ -219,8 +237,8 @@ const ViewAttendance = () => {
           />
           
           <div className="flex items-end">
-            <Button onClick={searchAttendance} className="w-full">
-              Search
+            <Button onClick={searchAttendance} className="w-full" disabled={isSearching}>
+              {isSearching ? 'Loading…' : 'Search'}
             </Button>
           </div>
         </div>
@@ -270,6 +288,12 @@ const ViewAttendance = () => {
       )}
 
       {/* Results */}
+      {selectedSubject && isSearching && (
+        <Card>
+          <div className="py-8 text-center text-gray-500">Loading attendance records…</div>
+        </Card>
+      )}
+
       {attendanceData.length > 0 && viewMode === 'date' && (
         <div className="space-y-4">
           {getUniqueDates().map(date => {
@@ -399,7 +423,13 @@ const ViewAttendance = () => {
       )}
 
       {/* No data state */}
-      {selectedSubject && attendanceData.length === 0 && (
+      {selectedSubject && searchError && (
+        <Card>
+          <div className="py-8 text-center text-red-600">{searchError}</div>
+        </Card>
+      )}
+
+      {selectedSubject && !isSearching && !searchError && attendanceData.length === 0 && (
         <Card>
           <div className="text-center py-12 text-gray-500">
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

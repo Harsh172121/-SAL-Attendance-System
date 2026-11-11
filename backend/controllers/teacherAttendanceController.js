@@ -26,6 +26,13 @@ const supportsAttendanceType = (subject, type) => {
   return subject.type === 'lab' || subject.type === 'theory+lab';
 };
 
+const isDateOnly = (value) => (
+  typeof value === 'string' &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
+  new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+);
+
 // Backward-compat helper
 const enrichSubjectJson = (subjectJson) => {
   const classes = subjectJson.classes || [];
@@ -415,6 +422,10 @@ const getAttendance = async (req, res) => {
       });
     }
 
+    if (type && !['theory', 'lab'].includes(type)) {
+      return res.status(400).json({ success: false, message: 'Type must be theory or lab' });
+    }
+
     // Build query
     const query = { subjectId };
 
@@ -430,11 +441,18 @@ const getAttendance = async (req, res) => {
 
     // Date filtering
     if (date) {
-      // For DATEONLY, just use the date string
-      query.date = new Date(date).toISOString().split('T')[0];
+      // DATEONLY values from <input type="date"> are already YYYY-MM-DD.
+      // Preserve that value instead of converting through the server timezone.
+      if (!isDateOnly(date)) {
+        return res.status(400).json({ success: false, message: 'Date must be a valid YYYY-MM-DD value' });
+      }
+      query.date = date;
     } else if (startDate && endDate) {
-      const start = new Date(startDate).toISOString().split('T')[0];
-      const end = new Date(endDate).toISOString().split('T')[0];
+      if (!isDateOnly(startDate) || !isDateOnly(endDate) || startDate > endDate) {
+        return res.status(400).json({ success: false, message: 'Provide a valid date range in YYYY-MM-DD format' });
+      }
+      const start = startDate;
+      const end = endDate;
       query.date = { [Op.gte]: start, [Op.lte]: end };
     }
 

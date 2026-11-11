@@ -600,10 +600,13 @@ export const attendanceService = {
   getBySubjectId: async (subjectId, params = {}) => {
     try {
       const response = await api.get(`/teacher/attendance/${subjectId}`, { params });
-      return response.data.success ? response.data.data : { subject: null, attendance: [], summary: {} };
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Unable to fetch attendance');
+      }
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching attendance:', error);
-      return { subject: null, attendance: [], summary: {} };
+      throw error;
     }
   },
 
