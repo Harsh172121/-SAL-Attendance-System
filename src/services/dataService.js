@@ -111,6 +111,16 @@ export const batchService = {
     }
   },
 
+  getPage: async (params = {}) => {
+    try {
+      const response = await api.get('/admin/batches', { params: { page: 1, limit: 50, ...params } });
+      return response.data.success ? response.data : { data: [], pagination: null };
+    } catch (error) {
+      console.error('Error fetching batch page:', error);
+      return { data: [], pagination: null };
+    }
+  },
+
   /**
    * Get batches by class ID
    * @param {number} classId - Class ID
@@ -204,6 +214,16 @@ export const studentService = {
     } catch (error) {
       console.error('Error fetching students:', error);
       return [];
+    }
+  },
+
+  getPage: async (params = {}) => {
+    try {
+      const response = await api.get('/admin/students', { params: { page: 1, limit: 50, ...params } });
+      return response.data.success ? response.data : { data: [], pagination: null };
+    } catch (error) {
+      console.error('Error fetching student page:', error);
+      return { data: [], pagination: null };
     }
   },
 

@@ -30,7 +30,7 @@ const ManageStudents = () => {
   // State management
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
-  const [batches, setBatches] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, item: null });
@@ -60,13 +60,15 @@ const ManageStudents = () => {
     classId: '',
     searchTerm: ''
   });
+  const [page, setPage] = useState(1);
 
   /**
    * Load initial data
    */
   useEffect(() => {
-    loadData();
-  }, []);
+    const timer = setTimeout(() => loadData(page), filters.searchTerm ? 250 : 0);
+    return () => clearTimeout(timer);
+  }, [page, filters.classId, filters.searchTerm]);
 
   /**
    * Update filtered batches when class changes in form
@@ -83,21 +85,24 @@ const ManageStudents = () => {
     loadBatches();
   }, [formData.classId]);
 
-  const loadData = async () => {
-    const [studentsData, classesData, batchesData] = await Promise.all([
-      studentService.getAll(),
-      classService.getAll(),
-      batchService.getAll()
+  const loadData = async (requestedPage = page) => {
+    const [studentPage, classesData] = await Promise.all([
+      studentService.getPage({
+        page: requestedPage,
+        limit: 50,
+        ...(filters.classId ? { classId: filters.classId } : {}),
+        ...(filters.searchTerm ? { search: filters.searchTerm } : {})
+      }),
+      classService.getAll()
     ]);
-    // Enrich students with class and batch names
-    const enrichedStudents = studentsData.map(student => ({
+    const enrichedStudents = studentPage.data.map(student => ({
       ...student,
-      className: classesData.find(c => c.id === student.classId)?.name || 'N/A',
-      batchName: batchesData.find(b => b.id === student.batchId)?.name || 'N/A'
+      className: student.class?.name || 'N/A',
+      batchName: student.batch?.name || 'N/A'
     }));
     setStudents(enrichedStudents);
     setClasses(classesData);
-    setBatches(batchesData);
+    if (studentPage.pagination) setPagination(studentPage.pagination);
   };
 
   const handleInputChange = (e) => {
@@ -212,18 +217,7 @@ const ManageStudents = () => {
   }));
 
   // Apply filters
-  let displayStudents = students;
-  if (filters.classId) {
-    displayStudents = displayStudents.filter(s => s.classId === parseInt(filters.classId));
-  }
-  if (filters.searchTerm) {
-    const term = filters.searchTerm.toLowerCase();
-    displayStudents = displayStudents.filter(s =>
-      s.name.toLowerCase().includes(term) ||
-      s.enrollmentNo.toLowerCase().includes(term) ||
-      s.email.toLowerCase().includes(term)
-    );
-  }
+  const displayStudents = students;
 
   // Table columns
   const columns = [
@@ -265,17 +259,17 @@ const ManageStudents = () => {
             id="searchTerm"
             placeholder="Search by name, enrollment, or email..."
             value={filters.searchTerm}
-            onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+            onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, searchTerm: e.target.value })); }}
           />
           <Select
             id="filterClass"
             value={filters.classId}
-            onChange={(e) => setFilters(prev => ({ ...prev, classId: e.target.value }))}
+            onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, classId: e.target.value })); }}
             options={classOptions}
             placeholder="All Classes"
           />
           <div className="text-sm text-gray-500 flex items-center justify-end">
-            Showing {displayStudents.length} of {students.length} students
+            Showing {displayStudents.length} of {pagination.total} students
           </div>
           <BulkDeleteControl
             selectedIds={selectedIds}
@@ -300,6 +294,13 @@ const ManageStudents = () => {
           onSelectionChange={setSelectedIds}
           emptyMessage="No students found. Click 'Add Student' to create one."
         />
+        <div className="flex items-center justify-between border-t mt-4 pt-4 text-sm">
+          <span>Page {pagination.page} of {Math.max(1, pagination.totalPages)}</span>
+          <div className="flex gap-2">
+            <Button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</Button>
+            <Button disabled={page >= pagination.totalPages} onClick={() => setPage((value) => value + 1)}>Next</Button>
+          </div>
+        </div>
       </Card>
 
       {/* Add/Edit Modal */}

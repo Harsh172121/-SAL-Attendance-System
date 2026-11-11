@@ -5,9 +5,21 @@
  * Provides class-wise, subject-wise, and student-wise reports.
  */
 
-const { Op } = require('sequelize');
-const { Attendance, Subject, Student, Class, Batch, Teacher } = require('../models');
-const { summarizeAttendanceRecords } = require('../utils/attendanceStats');
+const { fn, col } = require('sequelize');
+const { Attendance, Subject, Student, Class } = require('../models');
+
+const groupedSummary = (rows, type) => {
+  const records = rows.filter((row) => !type || row.type === type);
+  const summary = { present: 0, leave: 0, absent: 0, total: 0, percentage: 0 };
+  for (const row of records) {
+    const count = Number(row.count);
+    summary[row.status] += count;
+    summary.total += count;
+  }
+  const considered = summary.present + summary.absent;
+  summary.percentage = considered ? Math.round((summary.present / considered) * 100) : 0;
+  return summary;
+};
 
 /**
  * @desc    Get class-wise attendance report (all students in a class)
@@ -30,12 +42,21 @@ const getClassReport = async (req, res) => {
     });
 
     // Calculate overall attendance for each student across subjects in THIS class only
-    const report = await Promise.all(students.map(async (student) => {
-      const records = await Attendance.findAll({
-        where: { studentId: student.id, classId }
-      });
+    const attendanceRows = students.length ? await Attendance.findAll({
+      attributes: ['studentId', 'status', [fn('COUNT', col('id')), 'count']],
+      where: { studentId: students.map((student) => student.id), classId },
+      group: ['studentId', 'status'],
+      raw: true
+    }) : [];
+    const byStudent = new Map();
+    attendanceRows.forEach((row) => {
+      const id = Number(row.studentId);
+      if (!byStudent.has(id)) byStudent.set(id, []);
+      byStudent.get(id).push(row);
+    });
 
-      const summary = summarizeAttendanceRecords(records);
+    const report = students.map((student) => {
+      const summary = groupedSummary(byStudent.get(Number(student.id)) || []);
 
       return {
         studentId: student.id,
@@ -47,7 +68,7 @@ const getClassReport = async (req, res) => {
         total: summary.total,
         percentage: summary.percentage
       };
-    }));
+    });
 
     res.status(200).json({
       success: true,
@@ -69,7 +90,7 @@ const getSubjectReport = async (req, res) => {
     const { subjectId } = req.params;
 
     const subject = await Subject.findByPk(subjectId, {
-      include: [{ model: Class, as: 'class' }]
+      include: [{ model: Class, as: 'classes', attributes: ['id'] }]
     });
     if (!subject) {
       return res.status(404).json({ success: false, message: 'Subject not found' });
@@ -77,22 +98,27 @@ const getSubjectReport = async (req, res) => {
 
     // Get students in this class
     const students = await Student.findAll({
-      where: { classId: subject.class.id, isActive: true },
+      where: { classId: (subject.classes || []).map((item) => item.id), isActive: true },
       order: [['enrollmentNo', 'ASC']]
     });
 
-    const report = await Promise.all(students.map(async (student) => {
-      // Theory attendance
-      const theoryRecords = await Attendance.findAll({
-        where: { studentId: student.id, subjectId, type: 'theory' }
-      });
-      const theorySummary = summarizeAttendanceRecords(theoryRecords);
+    const attendanceRows = await Attendance.findAll({
+      attributes: ['studentId', 'type', 'status', [fn('COUNT', col('id')), 'count']],
+      where: { studentId: students.map((student) => student.id), subjectId },
+      group: ['studentId', 'type', 'status'],
+      raw: true
+    });
+    const byStudent = new Map();
+    attendanceRows.forEach((row) => {
+      const id = Number(row.studentId);
+      if (!byStudent.has(id)) byStudent.set(id, []);
+      byStudent.get(id).push(row);
+    });
 
-      // Lab attendance
-      const labRecords = await Attendance.findAll({
-        where: { studentId: student.id, subjectId, type: 'lab' }
-      });
-      const labSummary = summarizeAttendanceRecords(labRecords);
+    const report = students.map((student) => {
+      const rows = byStudent.get(Number(student.id)) || [];
+      const theorySummary = groupedSummary(rows, 'theory');
+      const labSummary = groupedSummary(rows, 'lab');
 
       return {
         studentId: student.id,
@@ -113,7 +139,7 @@ const getSubjectReport = async (req, res) => {
           percentage: labSummary.percentage
         }
       };
-    }));
+    });
 
     res.status(200).json({
       success: true,
@@ -154,17 +180,24 @@ const getStudentReport = async (req, res) => {
       }]
     });
 
-    const report = await Promise.all(subjects.map(async (subject) => {
-      const theoryRecords = await Attendance.findAll({
-        where: { studentId, subjectId: subject.id, type: 'theory' }
-      });
-      const theorySummary = summarizeAttendanceRecords(theoryRecords);
+    const attendanceRows = await Attendance.findAll({
+      attributes: ['subjectId', 'type', 'status', [fn('COUNT', col('id')), 'count']],
+      where: { studentId, subjectId: subjects.map((subject) => subject.id) },
+      group: ['subjectId', 'type', 'status'],
+      raw: true
+    });
+    const bySubject = new Map();
+    attendanceRows.forEach((row) => {
+      const id = Number(row.subjectId);
+      if (!bySubject.has(id)) bySubject.set(id, []);
+      bySubject.get(id).push(row);
+    });
 
-      const labRecords = await Attendance.findAll({
-        where: { studentId, subjectId: subject.id, type: 'lab' }
-      });
-      const labSummary = summarizeAttendanceRecords(labRecords);
-      const overallSummary = summarizeAttendanceRecords([...theoryRecords, ...labRecords]);
+    const report = subjects.map((subject) => {
+      const rows = bySubject.get(Number(subject.id)) || [];
+      const theorySummary = groupedSummary(rows, 'theory');
+      const labSummary = groupedSummary(rows, 'lab');
+      const overallSummary = groupedSummary(rows);
 
       return {
         subjectId: subject.id,
@@ -193,7 +226,7 @@ const getStudentReport = async (req, res) => {
           percentage: overallSummary.percentage
         }
       };
-    }));
+    });
 
     res.status(200).json({
       success: true,

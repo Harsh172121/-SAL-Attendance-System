@@ -57,28 +57,27 @@ const getMyAttendance = async (req, res) => {
       ]
     });
 
-    // Calculate attendance for each subject
-    const attendanceData = await Promise.all(subjects.map(async (subject) => {
-      // Get theory attendance
-      const theoryRecords = await Attendance.findAll({
-        where: {
-          studentId,
-          subjectId: subject.id,
-          type: 'theory'
-        }
-      });
-      const theorySummary = summarizeAttendanceRecords(theoryRecords);
+    // Load this student's attendance once instead of issuing two queries per
+    // subject plus another query for totals (an N+1 query pattern).
+    const allAttendance = await Attendance.findAll({
+      where: { studentId },
+      raw: true
+    });
+    const attendanceBySubject = new Map();
+    for (const record of allAttendance) {
+      if (!attendanceBySubject.has(Number(record.subjectId))) {
+        attendanceBySubject.set(Number(record.subjectId), []);
+      }
+      attendanceBySubject.get(Number(record.subjectId)).push(record);
+    }
 
-      // Get lab attendance (only for student's batch)
-      const labRecords = await Attendance.findAll({
-        where: {
-          studentId,
-          subjectId: subject.id,
-          type: 'lab'
-        }
-      });
+    const attendanceData = subjects.map((subject) => {
+      const subjectRecords = attendanceBySubject.get(Number(subject.id)) || [];
+      const theoryRecords = subjectRecords.filter((record) => record.type === 'theory');
+      const labRecords = subjectRecords.filter((record) => record.type === 'lab');
+      const theorySummary = summarizeAttendanceRecords(theoryRecords);
       const labSummary = summarizeAttendanceRecords(labRecords);
-      const overallSummary = summarizeAttendanceRecords([...theoryRecords, ...labRecords]);
+      const overallSummary = summarizeAttendanceRecords(subjectRecords);
 
       return {
         subjectId: subject.id,
@@ -109,9 +108,8 @@ const getMyAttendance = async (req, res) => {
           percentage: overallSummary.percentage
         }
       };
-    }));
+    });
 
-    const allAttendance = await Attendance.findAll({ where: { studentId } });
     const totalStats = summarizeAttendanceRecords(allAttendance);
 
     res.status(200).json({

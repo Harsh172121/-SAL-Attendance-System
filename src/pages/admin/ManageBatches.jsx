@@ -18,6 +18,8 @@ import { importConfigs } from '../../constants/importConfigs';
 const ManageBatches = () => {
   // State for batches data
   const [batches, setBatches] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
+  const [page, setPage] = useState(1);
   // State for classes (for dropdown)
   const [classes, setClasses] = useState([]);
   // Modal state
@@ -39,24 +41,27 @@ const ManageBatches = () => {
    * Load data on component mount
    */
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(page);
+  }, [page, filterClassId]);
 
   /**
    * Fetch all batches and classes
    */
-  const loadData = async () => {
-    const batchData = await batchService.getAll();
-    const classData = await classService.getAll();
+  const loadData = async (requestedPage = page) => {
+    const [batchPage, classData] = await Promise.all([
+      batchService.getPage({ page: requestedPage, limit: 50, ...(filterClassId ? { classId: filterClassId } : {}) }),
+      classService.getAll()
+    ]);
     
     // Enrich batch data with class names
-    const enrichedBatches = batchData.map(batch => ({
+    const enrichedBatches = batchPage.data.map(batch => ({
       ...batch,
-      className: classData.find(c => c.id === batch.classId)?.name || 'N/A'
+      className: batch.class?.name || 'N/A'
     }));
     
     setBatches(enrichedBatches);
     setClasses(classData);
+    if (batchPage.pagination) setPagination(batchPage.pagination);
   };
 
   /**
@@ -146,9 +151,7 @@ const ManageBatches = () => {
   }));
 
   // Filter batches by class
-  const filteredBatches = filterClassId
-    ? batches.filter(b => b.classId === parseInt(filterClassId))
-    : batches;
+  const filteredBatches = batches;
 
   // Table columns
   const columns = [
@@ -187,13 +190,13 @@ const ManageBatches = () => {
             <Select
               id="filterClass"
               value={filterClassId}
-              onChange={(e) => setFilterClassId(e.target.value)}
+              onChange={(e) => { setPage(1); setFilterClassId(e.target.value); }}
               options={classOptions}
               placeholder="All Classes"
             />
           </div>
           <div className="text-sm text-gray-500 flex items-center">
-            Showing {filteredBatches.length} batches
+            Showing {filteredBatches.length} of {pagination.total} batches
           </div>
           <BulkDeleteControl
             selectedIds={selectedIds}
@@ -218,6 +221,13 @@ const ManageBatches = () => {
           onSelectionChange={setSelectedIds}
           emptyMessage="No batches found. Click 'Add Batch' to create one."
         />
+        <div className="flex items-center justify-between border-t mt-4 pt-4 text-sm">
+          <span>Page {pagination.page} of {Math.max(1, pagination.totalPages)}</span>
+          <div className="flex gap-2">
+            <Button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</Button>
+            <Button disabled={page >= pagination.totalPages} onClick={() => setPage((value) => value + 1)}>Next</Button>
+          </div>
+        </div>
       </Card>
 
       {/* Add/Edit Modal */}

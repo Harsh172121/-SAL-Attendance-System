@@ -519,9 +519,7 @@ const buildTeacherPassword = (employeeId, password) => {
 };
 
 const importClasses = async (rows, transaction) => {
-  let created = 0;
-  let updated = 0;
-
+  const incoming = new Map();
   for (let index = 0; index < rows.length; index += 1) {
     const rowNumber = index + 1;
     const row = rows[index];
@@ -536,42 +534,39 @@ const importClasses = async (rows, transaction) => {
       throw createRowError(rowNumber, 'name, department, and semester are required.');
     }
 
-    const existing = await Class.findOne({
-      where: { name, department, semester },
-      transaction
+    incoming.set(`${name.toLowerCase()}|${department.toLowerCase()}|${semester}`, {
+      name, department, semester, academicYear, isActive
     });
-
-    if (existing) {
-      existing.academicYear = academicYear || existing.academicYear;
-      existing.isActive = isActive;
-      await existing.save({ transaction });
-      updated += 1;
-      continue;
-    }
-
-    await Class.create(
-      {
-        name,
-        department,
-        semester,
-        academicYear: academicYear || '2025-26',
-        isActive
-      },
-      { transaction }
-    );
-
-    created += 1;
   }
 
-  return { created, updated };
+  const records = [...incoming.values()];
+  if (!records.length) return { created: 0, updated: 0 };
+  const existing = await Class.findAll({
+    where: { name: [...new Set(records.map((row) => row.name))] },
+    transaction
+  });
+  const existingKeys = new Set(existing.map((row) => `${row.name.toLowerCase()}|${row.department.toLowerCase()}|${row.semester}`));
+  const existingByKey = new Map(existing.map((row) => [`${row.name.toLowerCase()}|${row.department.toLowerCase()}|${row.semester}`, row]));
+  const upserts = records.map((row) => {
+    const key = `${row.name.toLowerCase()}|${row.department.toLowerCase()}|${row.semester}`;
+    return {
+      ...row,
+      academicYear: row.academicYear || existingByKey.get(key)?.academicYear || '2025-26'
+    };
+  });
+  await Class.bulkCreate(upserts, {
+    transaction,
+    updateOnDuplicate: ['academicYear', 'isActive', 'updatedAt']
+  });
+  const updated = upserts.filter((row) => existingKeys.has(`${row.name.toLowerCase()}|${row.department.toLowerCase()}|${row.semester}`)).length;
+  return { created: upserts.length - updated, updated };
 };
 
 const importClassrooms = async (rows, transaction) => {
-  let created = 0;
-  let updated = 0;
   const resolvedRows = rows._rawRows
     ? rows._rawRows.map((values) => ({ classroomNumber: values[0] }))
     : rows;
+  const classroomNumbers = new Set();
 
   for (let index = 0; index < resolvedRows.length; index += 1) {
     const rowNumber = index + 1;
@@ -583,21 +578,20 @@ const importClassrooms = async (rows, transaction) => {
       throw createRowError(rowNumber, 'classroomNumber must be a positive whole number.');
     }
 
-    const existing = await Classroom.findOne({
-      where: { classroomNumber },
-      transaction
-    });
-
-    if (existing) {
-      updated += 1;
-      continue;
-    }
-
-    await Classroom.create({ classroomNumber }, { transaction });
-    created += 1;
+    classroomNumbers.add(classroomNumber);
   }
-
-  return { created, updated };
+  const numbers = [...classroomNumbers];
+  if (!numbers.length) return { created: 0, updated: 0 };
+  const existing = await Classroom.findAll({ where: { classroomNumber: numbers }, attributes: ['classroomNumber'], transaction, raw: true });
+  const existingNumbers = new Set(existing.map((row) => Number(row.classroomNumber)));
+  const missing = numbers.filter((number) => !existingNumbers.has(number));
+  if (missing.length) {
+    await Classroom.bulkCreate(missing.map((classroomNumber) => ({ classroomNumber })), {
+      transaction,
+      ignoreDuplicates: true
+    });
+  }
+  return { created: missing.length, updated: numbers.length - missing.length };
 };
 
 const importBatches = async (rows, transaction) => {

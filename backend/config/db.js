@@ -19,10 +19,11 @@ const path = require('path');
 
 const connectionString = process.env.DATABASE_URL;
 const pool = {
-  max: 5,
-  min: 0,
-  acquire: 30000,
-  idle: 10000
+  // Configurable per process; calculate total as max * deployed instances.
+  max: Math.max(1, Number.parseInt(process.env.DB_POOL_MAX, 10) || 10),
+  min: Math.max(0, Number.parseInt(process.env.DB_POOL_MIN, 10) || 0),
+  acquire: Math.max(1000, Number.parseInt(process.env.DB_POOL_ACQUIRE_MS, 10) || 30000),
+  idle: Math.max(1000, Number.parseInt(process.env.DB_POOL_IDLE_MS, 10) || 10000)
 };
 
 const sequelize = connectionString

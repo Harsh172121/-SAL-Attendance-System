@@ -16,6 +16,9 @@ const { Batch, Class, Student } = require('../models');
 const getAllBatches = async (req, res) => {
   try {
     const { classId, isActive } = req.query;
+    const paginated = req.query.page !== undefined || req.query.limit !== undefined;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
     
     // Build filter object
     const where = {};
@@ -24,18 +27,33 @@ const getAllBatches = async (req, res) => {
     
     const batches = await Batch.findAll({
       where,
-      include: [
-        { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
-        { model: Student, as: 'students', attributes: ['id'] }
-      ],
-      order: [['classId', 'ASC'], ['name', 'ASC']]
+      include: [{ model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] }],
+      order: [['classId', 'ASC'], ['name', 'ASC']],
+      ...(paginated ? { limit, offset: (page - 1) * limit } : {})
     });
     
-    // Add student count
-    const batchesWithCount = batches.map(b => ({
-      ...b.toJSON(),
-      studentCount: b.students ? b.students.length : 0
+    // Count only students for returned batch IDs; avoid joining and transferring
+    // every student's row just to calculate a count.
+    const batchIds = batches.map((batch) => batch.id);
+    const groupedCounts = batchIds.length ? await Student.count({
+      where: { batchId: batchIds },
+      group: ['batchId']
+    }) : [];
+    const countByBatch = new Map(groupedCounts.map((row) => [Number(row.batchId), Number(row.count)]));
+    const batchesWithCount = batches.map((batch) => ({
+      ...batch.toJSON(),
+      studentCount: countByBatch.get(Number(batch.id)) || 0
     }));
+
+    if (paginated) {
+      const total = await Batch.count({ where });
+      return res.status(200).json({
+        success: true,
+        count: total,
+        data: batchesWithCount,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+      });
+    }
     
     res.status(200).json({
       success: true,

@@ -17,6 +17,9 @@ const { Op } = require('sequelize');
 const getAllStudents = async (req, res) => {
   try {
     const { classId, batchId, isActive, search } = req.query;
+    const paginated = req.query.page !== undefined || req.query.limit !== undefined;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
     
     // Build filter object
     const where = {};
@@ -27,8 +30,9 @@ const getAllStudents = async (req, res) => {
     // Search by name or enrollment number
     if (search) {
       where[Op.or] = [
-        { name: { [Op.like]: `%${search}%` } },
-        { enrollmentNo: { [Op.like]: `%${search}%` } }
+        { name: { [Op.iLike]: `%${search}%` } },
+        { enrollmentNo: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
       ];
     }
     
@@ -38,8 +42,19 @@ const getAllStudents = async (req, res) => {
         { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] },
         { model: Batch, as: 'batch', attributes: ['id', 'name'] }
       ],
-      order: [['enrollmentNo', 'ASC']]
+      order: [['enrollmentNo', 'ASC']],
+      ...(paginated ? { limit, offset: (page - 1) * limit } : {})
     });
+
+    if (paginated) {
+      const total = await Student.count({ where });
+      return res.status(200).json({
+        success: true,
+        count: total,
+        data: students,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+      });
+    }
     
     res.status(200).json({
       success: true,
