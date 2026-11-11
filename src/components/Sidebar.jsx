@@ -5,7 +5,7 @@
  * Displays different menu items based on user role
  */
 
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useProxyNotifications } from '../hooks/useProxyNotifications';
 import ProxyNotificationPopup from './ProxyNotificationPopup';
@@ -13,10 +13,10 @@ import ProxyNotificationPopup from './ProxyNotificationPopup';
 const Sidebar = () => {
   // Get user data from auth context
   const { user, isElevated, canReviewLeaves } = useAuth();
-  const location = useLocation();
 
   const {
     unreadCount,
+    pendingCount,
     popupVisible,
     latestRequest,
     dismissPopup,
@@ -159,7 +159,7 @@ const Sidebar = () => {
       },
       {
         path: '/teacher/proxy-incoming',
-        label: 'Incoming Requests',
+        label: 'Proxy Lecture Requests',
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -283,8 +283,7 @@ const Sidebar = () => {
             const showNotificationPopup =
               isIncomingRequests &&
               popupVisible &&
-              Boolean(latestRequest) &&
-              !location.pathname.startsWith('/teacher/proxy-incoming');
+              Boolean(latestRequest);
 
             return (
               <li key={item.path} className="relative">
@@ -296,7 +295,7 @@ const Sidebar = () => {
                         ? 'bg-green-500 text-white'
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-800'
                     } ${
-                      isIncomingRequests && unreadCount > 0 && !isActive
+                      isIncomingRequests && pendingCount > 0 && !isActive
                         ? 'proxy-link-highlight'
                         : ''
                     }`
@@ -304,12 +303,12 @@ const Sidebar = () => {
                 >
                   {item.icon}
                   <span className="min-w-0 flex-1 truncate font-medium">{item.label}</span>
-                  {isIncomingRequests && unreadCount > 0 && (
+                  {isIncomingRequests && pendingCount > 0 && (
                     <span
                       className="proxy-badge-pulse flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold leading-none text-white"
-                      aria-label={`${unreadCount} unread proxy request${unreadCount === 1 ? '' : 's'}`}
+                      aria-label={`${pendingCount} pending proxy request${pendingCount === 1 ? '' : 's'}`}
                     >
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                      {pendingCount > 99 ? '99+' : pendingCount}
                     </span>
                   )}
                 </NavLink>

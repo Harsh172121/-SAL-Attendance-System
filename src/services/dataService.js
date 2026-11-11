@@ -877,12 +877,13 @@ export const proxyService = {
     try {
       const response = await api.get('/teacher/proxy/notifications');
       return {
-        count: response.data.success ? response.data.count : 0,
+        count: response.data.success ? response.data.unreadCount ?? response.data.count : 0,
+        pendingCount: response.data.success ? response.data.pendingCount ?? response.data.count : 0,
         data: response.data.success ? response.data.data : []
       };
     } catch (error) {
       console.error('Error fetching proxy notifications:', error);
-      return { count: 0, data: [] };
+      return { count: 0, pendingCount: 0, data: [] };
     }
   },
 

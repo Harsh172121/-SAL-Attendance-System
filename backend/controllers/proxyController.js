@@ -126,7 +126,6 @@ const createProxyRequest = async (req, res) => {
       classId: slot.classId,
       originalFacultyId,
       proxyFacultyId,
-      hodId: null,
       status: 'pending',
       reason,
       date,
@@ -204,20 +203,28 @@ const getProxyNotifications = async (req, res) => {
     const proxyFacultyId = Number(req.user.id);
     const today = new Date().toISOString().split('T')[0];
 
-    const requests = await ProxyRequest.findAll({
-      where: {
-        proxyFacultyId,
-        status: 'pending',
-        proxyFacultyViewedAt: { [Op.is]: null },
-        date: { [Op.gte]: today }
-      },
-      include: proxyRequestIncludes,
-      order: [['createdAt', 'DESC']]
-    });
+    const where = {
+      proxyFacultyId,
+      status: 'pending',
+      date: { [Op.gte]: today }
+    };
+    const [requests, pendingCount] = await Promise.all([
+      ProxyRequest.findAll({
+        where: {
+          ...where,
+          proxyFacultyViewedAt: { [Op.is]: null }
+        },
+        include: proxyRequestIncludes,
+        order: [['createdAt', 'DESC']]
+      }),
+      ProxyRequest.count({ where })
+    ]);
 
     return res.status(200).json({
       success: true,
       count: requests.length,
+      unreadCount: requests.length,
+      pendingCount,
       data: requests
     });
   } catch (error) {
@@ -286,7 +293,10 @@ const respondToProxyRequest = async (req, res) => {
       });
     }
 
-    const proxyRequest = await ProxyRequest.findByPk(requestId, { transaction });
+    const proxyRequest = await ProxyRequest.findByPk(requestId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    });
 
     if (!proxyRequest) {
       await transaction.rollback();

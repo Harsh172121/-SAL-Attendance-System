@@ -18,20 +18,23 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { proxyService } from '../services/dataService';
 
 export const PROXY_NOTIFICATIONS_REFRESH_EVENT = 'sal:proxy-notifications-refresh';
 
 /** How often to poll (ms) */
-const POLL_INTERVAL_MS = 20_000;
+const POLL_INTERVAL_MS = 5_000;
 
 export const useProxyNotifications = () => {
   const { user } = useAuth();
   const isTeacher = user?.role === 'teacher';
+  const teacherId = user?.id;
 
   const [requests, setRequests]       = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const [loading, setLoading]         = useState(false);
 
@@ -39,20 +42,39 @@ export const useProxyNotifications = () => {
   const knownRequestIds    = useRef(new Set());
   /** Ids the user dismissed via × in this session */
   const dismissedRequestIds = useRef(new Set());
+  /** Last known status for requests created by this teacher */
+  const outgoingStatuses = useRef(new Map());
   /** True only for the very first fetch after mount */
   const isFirstLoad = useRef(true);
 
   const refresh = useCallback(async ({ showSpinner = false } = {}) => {
-    if (!isTeacher) return;
+    if (!isTeacher || !teacherId) return;
 
     if (showSpinner) setLoading(true);
 
     try {
-      const result  = await proxyService.getNotifications();
+      const [result, outgoingRequests] = await Promise.all([
+        proxyService.getNotifications(),
+        proxyService.getMyRequests()
+      ]);
       const incoming = Array.isArray(result.data) ? result.data : [];
 
       setRequests(incoming);
-      setUnreadCount(result.count ?? 0);
+      setUnreadCount(result.unreadCount ?? result.count ?? 0);
+      setPendingCount(result.pendingCount ?? result.count ?? 0);
+
+      if (Array.isArray(outgoingRequests)) {
+        const currentStatuses = new Map();
+        outgoingRequests.forEach((request) => {
+          const previousStatus = outgoingStatuses.current.get(request.id);
+          if (previousStatus === 'pending' && request.status !== 'pending') {
+            const decision = request.status === 'approved' ? 'approved' : 'rejected';
+            toast.info(`Your Proxy Lecture request was ${decision}${request.proxyFaculty?.name ? ` by ${request.proxyFaculty.name}` : ''}.`);
+          }
+          currentStatuses.set(request.id, request.status);
+        });
+        outgoingStatuses.current = currentStatuses;
+      }
 
       const currentIds = new Set(incoming.map((r) => r.id));
 
@@ -79,16 +101,18 @@ export const useProxyNotifications = () => {
     } finally {
       if (showSpinner) setLoading(false);
     }
-  }, [isTeacher]);
+  }, [isTeacher, teacherId]);
 
   /* ── Mount / unmount effect ── */
   useEffect(() => {
     if (!isTeacher) {
       setRequests([]);
       setUnreadCount(0);
+      setPendingCount(0);
       setPopupVisible(false);
       knownRequestIds.current     = new Set();
       dismissedRequestIds.current = new Set();
+      outgoingStatuses.current = new Map();
       isFirstLoad.current         = true;
       return undefined;
     }
@@ -97,19 +121,33 @@ export const useProxyNotifications = () => {
     isFirstLoad.current         = true;
     knownRequestIds.current     = new Set();
     dismissedRequestIds.current = new Set();
+    outgoingStatuses.current = new Map();
+    setRequests([]);
+    setUnreadCount(0);
+    setPendingCount(0);
+    setPopupVisible(false);
 
     refresh({ showSpinner: true });
 
-    const intervalId = window.setInterval(() => refresh(), POLL_INTERVAL_MS);
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, POLL_INTERVAL_MS);
 
     const handleRefreshEvent = () => refresh({ showSpinner: true });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
     window.addEventListener(PROXY_NOTIFICATIONS_REFRESH_EVENT, handleRefreshEvent);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener(PROXY_NOTIFICATIONS_REFRESH_EVENT, handleRefreshEvent);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, [isTeacher, refresh]);
+  }, [isTeacher, teacherId, refresh]);
 
   /**
    * Called when the user clicks × on the popup.
@@ -122,7 +160,7 @@ export const useProxyNotifications = () => {
 
   /**
    * Called when the user clicks "Review request".
-   * Marks everything as read on the backend and clears local state instantly.
+   * Marks requests as read and hides the popup; pending count remains visible.
    */
   const markAllRead = useCallback(async () => {
     try {
@@ -130,17 +168,16 @@ export const useProxyNotifications = () => {
     } catch (error) {
       console.error('Error marking proxy notifications read:', error);
     } finally {
-      // Clear local state immediately regardless of API outcome
+      // Clear the unread indicator immediately regardless of API outcome.
       setUnreadCount(0);
-      setRequests([]);
       setPopupVisible(false);
-      knownRequestIds.current = new Set();
     }
   }, []);
 
   return {
     requests,
     unreadCount,
+    pendingCount,
     popupVisible,
     latestRequest: requests[0] ?? null,
     loading,

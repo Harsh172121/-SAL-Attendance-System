@@ -28,8 +28,8 @@ const ProxyIncoming = () => {
     window.dispatchEvent(new Event(PROXY_NOTIFICATIONS_REFRESH_EVENT));
   };
 
-  const loadRequests = useCallback(async ({ markRead = false } = {}) => {
-    setLoading(true);
+  const loadRequests = useCallback(async ({ markRead = false, showLoading = false } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await proxyService.getIncomingRequests();
       setRequests(data);
@@ -39,19 +39,18 @@ const ProxyIncoming = () => {
         notifySidebar();
       }
     } catch {
-      toast.error('Error loading incoming proxy requests');
+      if (showLoading) toast.error('Error loading incoming proxy requests');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadRequests({ markRead: true });
+    loadRequests({ markRead: true, showLoading: true });
 
-    const intervalId = window.setInterval(
-      () => loadRequests({ markRead: true }),
-      30000
-    );
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadRequests();
+    }, 5000);
 
     return () => window.clearInterval(intervalId);
   }, [loadRequests]);
@@ -101,7 +100,7 @@ const ProxyIncoming = () => {
             Requests sent directly to you by fellow faculty. Accept to take the lecture or decline to send it back.
           </p>
         </div>
-        <Button onClick={() => loadRequests({ markRead: true })} variant="outline">
+        <Button onClick={() => loadRequests({ markRead: true, showLoading: true })} variant="outline">
           Refresh
         </Button>
       </div>

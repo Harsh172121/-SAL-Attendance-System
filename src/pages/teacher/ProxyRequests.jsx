@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Card, Button } from '../../components';
 import { proxyService } from '../../services/dataService';
@@ -21,21 +21,32 @@ const ProxyRequests = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
 
-  const loadRequests = async () => {
-    setLoading(true);
+  const loadRequests = useCallback(async ({ showLoading = false } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await proxyService.getMyRequests();
       setRequests(data);
     } catch {
-      toast.error('Error loading proxy requests');
+      if (showLoading) toast.error('Error loading proxy requests');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadRequests();
-  }, []);
+    loadRequests({ showLoading: true });
+    const refresh = () => {
+      if (document.visibilityState === 'visible') loadRequests();
+    };
+    const intervalId = window.setInterval(refresh, 5000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [loadRequests]);
 
   const counts = useMemo(() => ({
     pending: requests.filter((item) => item.status === 'pending').length,
@@ -124,7 +135,7 @@ const ProxyRequests = () => {
         )}
 
         <div className="mt-5 text-right">
-          <Button onClick={loadRequests} variant="outline">Refresh</Button>
+          <Button onClick={() => loadRequests({ showLoading: true })} variant="outline">Refresh</Button>
         </div>
       </Card>
     </div>

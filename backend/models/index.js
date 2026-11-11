@@ -1,3 +1,4 @@
+/* global require, module */
 /**
  * SAL Education - Models Index
  *
@@ -102,12 +103,10 @@ ProxyRequest.belongsTo(Subject, { foreignKey: 'subjectId', as: 'subject' });
 ProxyRequest.belongsTo(Class, { foreignKey: 'classId', as: 'class' });
 ProxyRequest.belongsTo(Teacher, { foreignKey: 'originalFacultyId', as: 'originalFaculty' });
 ProxyRequest.belongsTo(Teacher, { foreignKey: 'proxyFacultyId', as: 'proxyFaculty' });
-ProxyRequest.belongsTo(Teacher, { foreignKey: 'hodId', as: 'hod' });
 
 LectureSlot.hasMany(ProxyRequest, { foreignKey: 'slotId', as: 'proxyRequests' });
 Teacher.hasMany(ProxyRequest, { foreignKey: 'originalFacultyId', as: 'sentProxyRequests' });
 Teacher.hasMany(ProxyRequest, { foreignKey: 'proxyFacultyId', as: 'receivedProxyRequests' });
-Teacher.hasMany(ProxyRequest, { foreignKey: 'hodId', as: 'hodProxyRequests' });
 
 ProxyAssignment.belongsTo(LectureSlot, { foreignKey: 'slotId', as: 'slot' });
 ProxyAssignment.belongsTo(Teacher, { foreignKey: 'originalFacultyId', as: 'originalFaculty' });

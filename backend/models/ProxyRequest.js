@@ -58,16 +58,6 @@ function defineProxyRequest(sequelize) {
         key: 'id'
       }
     },
-    // Kept for historical rows created before the direct-to-faculty flow.
-    // New proxy requests are sent straight to proxyFacultyId and store no HOD.
-    hodId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'teachers',
-        key: 'id'
-      }
-    },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'rejected'),
       allowNull: false,
@@ -97,7 +87,6 @@ function defineProxyRequest(sequelize) {
     tableName: 'proxy_requests',
     timestamps: true,
     indexes: [
-      { fields: ['hodId', 'status'] },
       { fields: ['proxyFacultyId', 'status'] },
       { fields: ['proxyFacultyId', 'status', 'proxyFacultyViewedAt'] },
       { fields: ['slotId', 'date'] },

@@ -133,7 +133,7 @@ const ProxyNotificationPopup = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-bold text-gray-900 leading-tight">
-                  New proxy request
+                  New Proxy Lecture request
                 </p>
                 {unreadCount > 1 && (
                   <span className="proxy-badge-pulse inline-flex items-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold leading-none text-white shadow">
@@ -142,8 +142,7 @@ const ProxyNotificationPopup = ({
                 )}
               </div>
               <p className="mt-1 text-sm leading-snug text-gray-600">
-                A new request has arrived,&nbsp;
-                <span className="font-medium text-blue-700">please check.</span>
+                A new Proxy Lecture request has arrived. Please check.
               </p>
             </div>
 
@@ -225,7 +224,7 @@ const ProxyNotificationPopup = ({
               onClick={onOpen}
               className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-900 hover:shadow-md active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
-              Review request
+              View Proxy Lecture requests
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
