@@ -34,6 +34,13 @@ const getMyAttendance = async (req, res) => {
       });
     }
 
+    if (!student.classId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your student account is not assigned to a class'
+      });
+    }
+
     // Get subjects for student's class via junction table
     const subjects = await Subject.findAll({
       where: { isActive: true },
@@ -43,7 +50,7 @@ const getMyAttendance = async (req, res) => {
         {
           model: Class,
           as: 'classes',
-          where: { id: student.class.id },
+          where: { id: student.classId },
           required: true,
           attributes: ['id', 'name']
         }
