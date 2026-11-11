@@ -1,4 +1,4 @@
-/* global require, module, process */
+/* global require, module */
 /**
  * Slot-driven attendance controller.
  *
@@ -16,8 +16,6 @@ const {
   Subject,
   Class
 } = require('../models');
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const normalizeDateOnly = (value) => {
   const parsedDate = new Date(value);
@@ -257,43 +255,6 @@ const saveSlotAttendance = async (req, res) => {
       });
     }
     const { slot } = slotContext;
-
-    const enforceSlotWindow = process.env.ENFORCE_SLOT_TIME_WINDOW !== 'false';
-    if (enforceSlotWindow) {
-      const now = new Date();
-      // Slot schedules are entered in the institution's local timezone. Node
-      // servers commonly run in UTC, so use the configured campus timezone.
-      const timeZone = process.env.APP_TIMEZONE || 'Asia/Kolkata';
-      const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone,
-        weekday: 'long',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hourCycle: 'h23'
-      }).formatToParts(now).reduce((result, part) => {
-        result[part.type] = part.value;
-        return result;
-      }, {});
-      const today = `${parts.year}-${parts.month}-${parts.day}`;
-      const currentDay = parts.weekday;
-      const currentTime = `${parts.hour}:${parts.minute}:${parts.second}`;
-
-      if (
-        attendanceDate !== today ||
-        slot.dayOfWeek !== currentDay ||
-        !(slot.startTime <= currentTime && slot.endTime >= currentTime)
-      ) {
-        await transaction.rollback();
-        return res.status(403).json({
-          success: false,
-          message: 'Attendance can only be marked during the active slot time window'
-        });
-      }
-    }
 
     const duplicateAttendance = await Attendance.findOne({
       where: {
