@@ -29,6 +29,11 @@ export const AuthProvider = ({ children }) => {
    */
   useEffect(() => {
     const checkAuth = async () => {
+      // Each browser tab has isolated sessionStorage; a fresh tab must log in.
+      if (!window.sessionStorage.getItem('tabSessionId')) {
+        setLoading(false);
+        return;
+      }
       try {
         const response = await api.get('/auth/me');
         if (response.data.success) {
@@ -56,6 +61,7 @@ export const AuthProvider = ({ children }) => {
    */
   const login = async (email, password, role) => {
     try {
+      window.sessionStorage.setItem('tabSessionId', window.crypto.randomUUID());
       // Call backend API for login
       const response = await api.post('/auth/login', {
         email,
@@ -86,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
     } catch (error) {
+      window.sessionStorage.removeItem('tabSessionId');
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(message);
       return false;
@@ -104,6 +111,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      window.sessionStorage.removeItem('tabSessionId');
       toast.info('You have been logged out.');
     }
   };

@@ -94,15 +94,18 @@ const login = async (req, res) => {
     }
     
     // Generate JWT token
-    const token = generateToken(user.id, userRole);
+    const tabSessionId = req.get('X-Tab-Session');
+    if (typeof tabSessionId !== 'string' || !/^[a-f0-9-]{36}$/i.test(tabSessionId)) {
+      return res.status(400).json({ success: false, message: 'Invalid browser tab session' });
+    }
+    const token = generateToken(user.id, userRole, tabSessionId);
 
     // QA-FIXED: JWT moved to httpOnly cookie instead of JSON response
     // Set secure httpOnly cookie with token
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      secure: process.env.NODE_ENV === 'production'
     });
 
     // Prepare user data (exclude password)

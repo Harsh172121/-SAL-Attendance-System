@@ -27,6 +27,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Token is automatically sent with cookies (httpOnly)
+    const tabSessionId = window.sessionStorage.getItem('tabSessionId');
+    if (tabSessionId) {
+      config.headers['X-Tab-Session'] = tabSessionId;
+    }
     return config;
   },
   (error) => {

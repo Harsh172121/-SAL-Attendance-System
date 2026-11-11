@@ -32,6 +32,16 @@ const protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Bind the HttpOnly cookie to the tab that authenticated. A newly opened
+    // tab has a different sessionStorage value and cannot reuse this cookie.
+    const tabSessionId = req.get('X-Tab-Session');
+    if (!decoded.tabSessionId || tabSessionId !== decoded.tabSessionId) {
+      return res.status(401).json({
+        success: false,
+        message: 'This tab is not authenticated. Please login again.'
+      });
+    }
     
     // Find user based on role
     let user;
@@ -96,9 +106,9 @@ const protect = async (req, res, next) => {
  * @param {string} role - User role (admin/teacher/student)
  * @returns {string} - JWT token
  */
-const generateToken = (id, role) => {
+const generateToken = (id, role, tabSessionId) => {
   return jwt.sign(
-    { id, role },
+    { id, role, tabSessionId },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );
