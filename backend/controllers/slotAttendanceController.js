@@ -261,9 +261,26 @@ const saveSlotAttendance = async (req, res) => {
     const enforceSlotWindow = process.env.ENFORCE_SLOT_TIME_WINDOW !== 'false';
     if (enforceSlotWindow) {
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const currentDay = DAY_NAMES[now.getDay()];
-      const currentTime = now.toTimeString().slice(0, 8);
+      // Slot schedules are entered in the institution's local timezone. Node
+      // servers commonly run in UTC, so use the configured campus timezone.
+      const timeZone = process.env.APP_TIMEZONE || 'Asia/Kolkata';
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        weekday: 'long',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      }).formatToParts(now).reduce((result, part) => {
+        result[part.type] = part.value;
+        return result;
+      }, {});
+      const today = `${parts.year}-${parts.month}-${parts.day}`;
+      const currentDay = parts.weekday;
+      const currentTime = `${parts.hour}:${parts.minute}:${parts.second}`;
 
       if (
         attendanceDate !== today ||
