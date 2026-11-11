@@ -8,13 +8,13 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 // Use the frontend origin for API requests. Vercel rewrites /api to the hosted
-// backend, and Vite proxies /api locally. This keeps auth cookies first-party.
+// backend, and Vite proxies /api locally.
 const apiBaseURL = '/api';
 
 const api = axios.create({
   baseURL: apiBaseURL,
   timeout: 10000, // 10 second timeout
-  withCredentials: true, // Required for httpOnly auth cookie
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,11 +22,12 @@ const api = axios.create({
 
 /**
  * Request Interceptor
- * QA-FIXED: Token now in httpOnly cookie, no need to add Authorization header
+ * Per-tab JWTs are isolated in sessionStorage and sent as bearer credentials.
  */
 api.interceptors.request.use(
   (config) => {
-    // Token is automatically sent with cookies (httpOnly)
+    const token = window.sessionStorage.getItem('authToken');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     const tabSessionId = window.sessionStorage.getItem('tabSessionId');
     if (tabSessionId) {
       config.headers['X-Tab-Session'] = tabSessionId;

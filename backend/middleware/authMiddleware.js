@@ -16,10 +16,8 @@ const { Admin, Teacher, Student } = require('../models');
 const protect = async (req, res, next) => {
   let token;
 
-  // QA-FIXED: JWT moved to httpOnly cookie - read from req.cookies instead of Authorization header
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
+  const authorization = req.get('authorization') || '';
+  if (authorization.startsWith('Bearer ')) token = authorization.slice(7).trim();
 
   // Check if token exists
   if (!token) {
@@ -33,8 +31,8 @@ const protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Bind the HttpOnly cookie to the tab that authenticated. A newly opened
-    // tab has a different sessionStorage value and cannot reuse this cookie.
+    // Bind this token to the browser tab that authenticated. Each tab stores
+    // its own token and session ID, so separate users do not overwrite one another.
     const tabSessionId = req.get('X-Tab-Session');
     if (!decoded.tabSessionId || tabSessionId !== decoded.tabSessionId) {
       return res.status(401).json({

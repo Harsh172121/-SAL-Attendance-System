@@ -25,12 +25,12 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Effect: Check for existing session on app load
-   * Uses /api/auth/me endpoint to verify authentication via httpOnly cookie
+   * Uses the per-tab bearer token to verify the current tab's session.
    */
   useEffect(() => {
     const checkAuth = async () => {
       // Each browser tab has isolated sessionStorage; a fresh tab must log in.
-      if (!window.sessionStorage.getItem('tabSessionId')) {
+      if (!window.sessionStorage.getItem('tabSessionId') || !window.sessionStorage.getItem('authToken')) {
         setLoading(false);
         return;
       }
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * Login Function
    * Calls backend API for authentication
-   * Token is automatically stored in httpOnly cookie by backend
+   * Token is returned by the backend and stored in this tab's sessionStorage.
    * @param {string} email - User's email
    * @param {string} password - User's password
    * @param {string} role - Selected role (admin/teacher/student)
@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.data.success) {
-        // Prefer server-side session state after cookie is set.
+        window.sessionStorage.setItem('authToken', response.data.data.token);
+        // Verify the newly issued token before updating the UI.
         let userData = response.data.data.user;
         let userRole = response.data.data.role || role;
 
@@ -93,6 +94,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       window.sessionStorage.removeItem('tabSessionId');
+      window.sessionStorage.removeItem('authToken');
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(message);
       return false;
@@ -101,7 +103,7 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Logout Function
-   * Calls backend to clear httpOnly cookie and clears user session
+   * Calls the backend and clears this tab's session credentials.
    */
   const logout = async () => {
     try {
@@ -112,6 +114,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       window.sessionStorage.removeItem('tabSessionId');
+      window.sessionStorage.removeItem('authToken');
       toast.info('You have been logged out.');
     }
   };
