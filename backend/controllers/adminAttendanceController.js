@@ -141,9 +141,17 @@ const getStudentReport = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Get all subjects for the student's class
+    // Subjects are linked to classes through the subject_classes junction table;
+    // `classId` is not a column on subjects.
     const subjects = await Subject.findAll({
-      where: { classId: student.class.id, isActive: true }
+      where: { isActive: true },
+      include: [{
+        model: Class,
+        as: 'classes',
+        where: { id: student.classId },
+        required: true,
+        attributes: []
+      }]
     });
 
     const report = await Promise.all(subjects.map(async (subject) => {
