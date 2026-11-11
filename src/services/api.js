@@ -7,10 +7,9 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Set VITE_API_URL to the deployed backend API origin in the frontend host,
-// for example https://sal-attendance-system.vercel.app/api. Keep /api as the
-// local and same-origin fallback so Vite's development proxy continues to work.
-const apiBaseURL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+// Use the frontend origin for API requests. Vercel rewrites /api to the hosted
+// backend, and Vite proxies /api locally. This keeps auth cookies first-party.
+const apiBaseURL = '/api';
 
 const api = axios.create({
   baseURL: apiBaseURL,

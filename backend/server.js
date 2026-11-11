@@ -45,6 +45,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS
 app.use(cors((req, callback) => {
   const origin = req.get('origin');
   const host = req.get('host');
+  const isFrontendVercelDeployment = origin
+    && /^https:\/\/sal-attendance-system-eosd(?:-[a-z0-9]+)?\.vercel\.app$/i.test(origin);
   let sameOrigin = false;
 
   if (origin && host) {
@@ -55,7 +57,7 @@ app.use(cors((req, callback) => {
     }
   }
 
-  if (!origin || allowedOrigins.includes(origin) || sameOrigin) {
+  if (!origin || allowedOrigins.includes(origin) || sameOrigin || isFrontendVercelDeployment) {
     return callback(null, { origin: true, credentials: true });
   }
 
