@@ -85,7 +85,10 @@ const connectDB = async () => {
     console.log(`✅ PostgreSQL connected: ${host}`);
   } catch (error) {
     // Do not print connection strings or credential values.
-    console.error(`❌ PostgreSQL connection failed (${error.code || error.name || 'Error'})`);
+    const cause = error.original || error.parent || error.cause;
+    const errorName = cause?.name || error.name || 'Error';
+    const errorCode = cause?.code || error.code;
+    console.error(`❌ PostgreSQL connection failed (${errorName}${errorCode ? `: ${errorCode}` : ''})`);
     throw error;
   }
 };
