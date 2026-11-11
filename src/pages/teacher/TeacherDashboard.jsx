@@ -163,7 +163,7 @@ const TeacherDashboard = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-800">Proxy Requests</h3>
-              <p className="text-sm text-gray-600">Request proxy lecture with HOD approval</p>
+              <p className="text-sm text-gray-600">Request a proxy lecture from a colleague</p>
             </div>
           </Link>
 

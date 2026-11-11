@@ -13,6 +13,7 @@ export { default as Sidebar } from './Sidebar';
 export { default as TimetableGrid } from './TimetableGrid';
 export { default as Layout } from './Layout';
 export { default as ProtectedRoute } from './ProtectedRoute';
+export { default as ProxyNotificationPopup } from './ProxyNotificationPopup';
 
 // UI components
 export { default as Card } from './Card';

@@ -5,12 +5,23 @@
  * Displays different menu items based on user role
  */
 
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProxyNotifications } from '../hooks/useProxyNotifications';
+import ProxyNotificationPopup from './ProxyNotificationPopup';
 
 const Sidebar = () => {
   // Get user data from auth context
   const { user, isElevated, canReviewLeaves } = useAuth();
+  const location = useLocation();
+
+  const {
+    unreadCount,
+    popupVisible,
+    latestRequest,
+    dismissPopup,
+    markAllRead
+  } = useProxyNotifications();
 
   /**
    * Menu items configuration for each role
@@ -147,6 +158,15 @@ const Sidebar = () => {
         ),
       },
       {
+        path: '/teacher/proxy-incoming',
+        label: 'Incoming Requests',
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+        ),
+      },
+      {
         path: '/teacher/proxy-requests',
         label: 'Proxy Requests',
         icon: (
@@ -161,15 +181,6 @@ const Sidebar = () => {
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        ),
-      },
-      {
-        path: '/teacher/proxy-approvals',
-        label: 'Proxy Approvals',
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         ),
       },
@@ -232,15 +243,13 @@ const Sidebar = () => {
         ...menuItems.admin,
         ...menuItems.teacher.filter((item) =>
           item.path !== '/teacher/dashboard' &&
-          (item.path !== '/teacher/leave-requests' || canReviewLeaves) &&
-          (item.path !== '/teacher/proxy-approvals' || user?.priority === 'HOD')
+          (item.path !== '/teacher/leave-requests' || canReviewLeaves)
         )
       ];
     }
     if (user?.role === 'teacher') {
       return menuItems.teacher.filter((item) =>
-        (item.path !== '/teacher/leave-requests' || canReviewLeaves) &&
-        (item.path !== '/teacher/proxy-approvals' || user?.priority === 'HOD')
+        (item.path !== '/teacher/leave-requests' || canReviewLeaves)
       );
     }
     return menuItems[user?.role] || [];
@@ -269,23 +278,53 @@ const Sidebar = () => {
       {/* Navigation links */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {currentMenuItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-green-500 text-white'
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-800'
-                  }`
-                }
-              >
-                {item.icon}
-                <span className="font-medium">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {currentMenuItems.map((item) => {
+            const isIncomingRequests = item.path === '/teacher/proxy-incoming';
+            const showNotificationPopup =
+              isIncomingRequests &&
+              popupVisible &&
+              Boolean(latestRequest) &&
+              !location.pathname.startsWith('/teacher/proxy-incoming');
+
+            return (
+              <li key={item.path} className="relative">
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-green-500 text-white'
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-800'
+                    } ${
+                      isIncomingRequests && unreadCount > 0 && !isActive
+                        ? 'proxy-link-highlight'
+                        : ''
+                    }`
+                  }
+                >
+                  {item.icon}
+                  <span className="min-w-0 flex-1 truncate font-medium">{item.label}</span>
+                  {isIncomingRequests && unreadCount > 0 && (
+                    <span
+                      className="proxy-badge-pulse flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold leading-none text-white"
+                      aria-label={`${unreadCount} unread proxy request${unreadCount === 1 ? '' : 's'}`}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </NavLink>
+
+                {showNotificationPopup && (
+                  <ProxyNotificationPopup
+                    request={latestRequest}
+                    unreadCount={unreadCount}
+                    onDismiss={dismissPopup}
+                    onOpen={markAllRead}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

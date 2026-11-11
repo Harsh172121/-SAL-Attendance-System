@@ -30,22 +30,21 @@ const getSlotWithRelations = (slotId, transaction) => LectureSlot.findByPk(slotI
   transaction
 });
 
-const findDepartmentHod = async (department, transaction) => {
-  const hods = await Teacher.findAll({
-    where: {
-      role: 'teacher',
-      priority: 'HOD',
-      isActive: true
-    },
-    order: [['name', 'ASC']],
-    transaction
-  });
-
-  return hods.find((teacher) => teacherHandlesDepartment(teacher, department)) || null;
-};
+const proxyRequestIncludes = [
+  {
+    model: LectureSlot,
+    as: 'slot',
+    include: [
+      { model: Subject, as: 'subject', attributes: ['id', 'code', 'name'] },
+      { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] }
+    ]
+  },
+  { model: Teacher, as: 'originalFaculty', attributes: ['id', 'name', 'employeeId', 'department'] },
+  { model: Teacher, as: 'proxyFaculty', attributes: ['id', 'name', 'employeeId', 'department'] }
+];
 
 /**
- * @desc    Create proxy request
+ * @desc    Create proxy request and deliver it directly to the selected faculty
  * @route   POST /api/proxy/request
  * @access  Private/Teacher
  */
@@ -108,15 +107,6 @@ const createProxyRequest = async (req, res) => {
       });
     }
 
-    const hod = await findDepartmentHod(slot.class?.department, transaction);
-    if (!hod) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'No HOD configured for this department'
-      });
-    }
-
     const existingAssignment = await ProxyAssignment.findOne({
       where: { slotId, date },
       transaction
@@ -136,18 +126,19 @@ const createProxyRequest = async (req, res) => {
       classId: slot.classId,
       originalFacultyId,
       proxyFacultyId,
-      hodId: hod.id,
+      hodId: null,
       status: 'pending',
       reason,
       date,
-      activeRequestKey: 1
+      activeRequestKey: 1,
+      proxyFacultyViewedAt: null
     }, { transaction });
 
     await transaction.commit();
 
     return res.status(201).json({
       success: true,
-      message: 'Proxy request submitted successfully',
+      message: `Proxy request sent to ${proxyFaculty.name}`,
       data: proxyRequest
     });
   } catch (error) {
@@ -170,32 +161,22 @@ const createProxyRequest = async (req, res) => {
 };
 
 /**
- * @desc    Get pending proxy requests for HOD
- * @route   GET /api/proxy/hod-requests
- * @access  Private/HOD
+ * @desc    Get proxy requests delivered directly to the signed-in faculty
+ * @route   GET /api/proxy/incoming-requests
+ * @access  Private/Teacher
  */
-const getHodRequests = async (req, res) => {
+const getIncomingProxyRequests = async (req, res) => {
   try {
-    const hodId = Number(req.user.id);
+    const proxyFacultyId = Number(req.user.id);
+    const today = new Date().toISOString().split('T')[0];
 
     const requests = await ProxyRequest.findAll({
       where: {
-        hodId,
-        status: 'pending'
+        proxyFacultyId,
+        date: { [Op.gte]: today }
       },
-      include: [
-        {
-          model: LectureSlot,
-          as: 'slot',
-          include: [
-            { model: Subject, as: 'subject', attributes: ['id', 'code', 'name'] },
-            { model: Class, as: 'class', attributes: ['id', 'name', 'department', 'semester'] }
-          ]
-        },
-        { model: Teacher, as: 'originalFaculty', attributes: ['id', 'name', 'employeeId', 'department'] },
-        { model: Teacher, as: 'proxyFaculty', attributes: ['id', 'name', 'employeeId', 'department'] }
-      ],
-      order: [['date', 'ASC'], ['createdAt', 'ASC']]
+      include: proxyRequestIncludes,
+      order: [['date', 'ASC'], ['createdAt', 'DESC']]
     });
 
     return res.status(200).json({
@@ -204,27 +185,98 @@ const getHodRequests = async (req, res) => {
       data: requests
     });
   } catch (error) {
-    console.error('Get HOD proxy requests error:', error);
+    console.error('Get incoming proxy requests error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error fetching HOD proxy requests',
+      message: 'Error fetching incoming proxy requests',
       error: error.message
     });
   }
 };
 
 /**
- * @desc    Approve/reject proxy request
- * @route   PUT /api/proxy/update-status/:requestId
- * @access  Private/HOD
+ * @desc    Get unread proxy notifications for the sidebar badge/popup
+ * @route   GET /api/proxy/notifications
+ * @access  Private/Teacher
  */
-const updateProxyStatus = async (req, res) => {
+const getProxyNotifications = async (req, res) => {
+  try {
+    const proxyFacultyId = Number(req.user.id);
+    const today = new Date().toISOString().split('T')[0];
+
+    const requests = await ProxyRequest.findAll({
+      where: {
+        proxyFacultyId,
+        status: 'pending',
+        proxyFacultyViewedAt: { [Op.is]: null },
+        date: { [Op.gte]: today }
+      },
+      include: proxyRequestIncludes,
+      order: [['createdAt', 'DESC']]
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: requests.length,
+      data: requests
+    });
+  } catch (error) {
+    console.error('Get proxy notifications error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching proxy notifications',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Mark all unread proxy requests as viewed by the selected faculty
+ * @route   PUT /api/proxy/notifications/read
+ * @access  Private/Teacher
+ */
+const markProxyNotificationsRead = async (req, res) => {
+  try {
+    const proxyFacultyId = Number(req.user.id);
+
+    const [updatedCount] = await ProxyRequest.update(
+      { proxyFacultyViewedAt: new Date() },
+      {
+        where: {
+          proxyFacultyId,
+          status: 'pending',
+          proxyFacultyViewedAt: { [Op.is]: null }
+        }
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Proxy notifications marked as read',
+      updatedCount
+    });
+  } catch (error) {
+    console.error('Mark proxy notifications read error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error marking proxy notifications as read',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Accept or decline a proxy request as the selected faculty member
+ * @route   PUT /api/proxy/incoming-requests/:requestId/respond
+ * @access  Private/Teacher
+ */
+const respondToProxyRequest = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
     const requestId = parsePositiveInt(req.params.requestId);
     const status = req.body.status;
-    const hodId = Number(req.user.id);
+    const proxyFacultyId = Number(req.user.id);
 
     if (!requestId || !['approved', 'rejected'].includes(status)) {
       await transaction.rollback();
@@ -244,11 +296,11 @@ const updateProxyStatus = async (req, res) => {
       });
     }
 
-    if (Number(proxyRequest.hodId) !== hodId) {
+    if (Number(proxyRequest.proxyFacultyId) !== proxyFacultyId) {
       await transaction.rollback();
       return res.status(403).json({
         success: false,
-        message: 'You are not authorized to review this request'
+        message: 'This proxy request was not sent to you'
       });
     }
 
@@ -269,7 +321,15 @@ const updateProxyStatus = async (req, res) => {
         transaction
       });
 
-      if (!existingAssignment) {
+      if (existingAssignment) {
+        if (Number(existingAssignment.proxyFacultyId) !== proxyFacultyId) {
+          await transaction.rollback();
+          return res.status(409).json({
+            success: false,
+            message: 'Another faculty member is already handling this lecture'
+          });
+        }
+      } else {
         await ProxyAssignment.create({
           slotId: proxyRequest.slotId,
           date: proxyRequest.date,
@@ -281,21 +341,32 @@ const updateProxyStatus = async (req, res) => {
 
     proxyRequest.status = status;
     proxyRequest.activeRequestKey = status === 'rejected' ? null : 1;
+    proxyRequest.proxyFacultyViewedAt = new Date();
     await proxyRequest.save({ transaction });
 
     await transaction.commit();
 
     return res.status(200).json({
       success: true,
-      message: `Proxy request ${status} successfully`,
+      message: status === 'approved'
+        ? 'Proxy request accepted. The lecture is now assigned to you.'
+        : 'Proxy request declined.',
       data: proxyRequest
     });
   } catch (error) {
     await transaction.rollback();
-    console.error('Update proxy status error:', error);
+
+    if (error instanceof UniqueConstraintError) {
+      return res.status(409).json({
+        success: false,
+        message: 'Another proxy assignment already exists for this lecture'
+      });
+    }
+
+    console.error('Respond to proxy request error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error updating proxy request status',
+      message: 'Error responding to proxy request',
       error: error.message
     });
   }
@@ -562,8 +633,10 @@ const getProxySuggestions = async (req, res) => {
 
 module.exports = {
   createProxyRequest,
-  getHodRequests,
-  updateProxyStatus,
+  getIncomingProxyRequests,
+  getProxyNotifications,
+  markProxyNotificationsRead,
+  respondToProxyRequest,
   getMyProxyLectures,
   getProxyFacultyOptions,
   getMyProxyRequests,

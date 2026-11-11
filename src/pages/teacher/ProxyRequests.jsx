@@ -10,6 +10,12 @@ const statusClasses = {
   rejected: 'bg-red-100 text-red-700'
 };
 
+const statusLabels = {
+  pending: 'Pending',
+  approved: 'Accepted',
+  rejected: 'Declined'
+};
+
 const ProxyRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +60,7 @@ const ProxyRequests = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">My Proxy Requests</h1>
-        <p className="text-gray-600">Track request status sent for HOD approval.</p>
+        <p className="text-gray-600">Track requests you sent directly to fellow faculty.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -83,7 +89,7 @@ const ProxyRequests = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)} ({counts[tab]})
+            {statusLabels[tab]} ({counts[tab]})
           </button>
         ))}
       </div>
@@ -109,7 +115,7 @@ const ProxyRequests = () => {
                     <p className="text-sm text-gray-500">Reason: {request.reason || 'N/A'}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClasses[request.status]}`}>
-                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    {statusLabels[request.status]}
                   </span>
                 </div>
               </div>

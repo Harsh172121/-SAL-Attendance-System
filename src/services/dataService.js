@@ -863,22 +863,48 @@ export const proxyService = {
     }
   },
 
-  getHodRequests: async () => {
+  getIncomingRequests: async () => {
     try {
-      const response = await api.get('/teacher/proxy/hod-requests');
+      const response = await api.get('/teacher/proxy/incoming-requests');
       return response.data.success ? response.data.data : [];
     } catch (error) {
-      console.error('Error fetching HOD proxy requests:', error);
+      console.error('Error fetching incoming proxy requests:', error);
       return [];
     }
   },
 
-  updateStatus: async (requestId, status) => {
+  getNotifications: async () => {
     try {
-      const response = await api.put(`/teacher/proxy/update-status/${requestId}`, { status });
+      const response = await api.get('/teacher/proxy/notifications');
+      return {
+        count: response.data.success ? response.data.count : 0,
+        data: response.data.success ? response.data.data : []
+      };
+    } catch (error) {
+      console.error('Error fetching proxy notifications:', error);
+      return { count: 0, data: [] };
+    }
+  },
+
+  markNotificationsRead: async () => {
+    try {
+      const response = await api.put('/teacher/proxy/notifications/read');
+      return response.data.success;
+    } catch (error) {
+      console.error('Error marking proxy notifications as read:', error);
+      return false;
+    }
+  },
+
+  respondToRequest: async (requestId, status) => {
+    try {
+      const response = await api.put(
+        `/teacher/proxy/incoming-requests/${requestId}/respond`,
+        { status }
+      );
       return response.data.success ? response.data.data : null;
     } catch (error) {
-      console.error('Error updating proxy request status:', error);
+      console.error('Error responding to proxy request:', error);
       throw error;
     }
   },

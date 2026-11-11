@@ -13,5 +13,5 @@ export { default as ManageLectureSlots } from './ManageLectureSlots';
 export { default as StartAttendance } from './StartAttendance';
 export { default as LeaveRequests } from './LeaveRequests';
 export { default as ProxyRequests } from './ProxyRequests';
-export { default as ProxyApprovals } from './ProxyApprovals';
+export { default as ProxyIncoming } from './ProxyIncoming';
 export { default as ProxyLectures } from './ProxyLectures';

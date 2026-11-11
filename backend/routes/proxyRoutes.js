@@ -2,11 +2,13 @@
 const express = require('express');
 const router = express.Router();
 
-const { protect, teacherOnly, hodOnly } = require('../middleware');
+const { protect, teacherOnly } = require('../middleware');
 const {
   createProxyRequest,
-  getHodRequests,
-  updateProxyStatus,
+  getIncomingProxyRequests,
+  getProxyNotifications,
+  markProxyNotificationsRead,
+  respondToProxyRequest,
   getMyProxyLectures,
   getProxyFacultyOptions,
   getMyProxyRequests,
@@ -20,8 +22,11 @@ router.get('/faculty-options', teacherOnly, getProxyFacultyOptions);
 router.get('/my-lectures', teacherOnly, getMyProxyLectures);
 router.get('/my-requests', teacherOnly, getMyProxyRequests);
 router.get('/suggestions', teacherOnly, getProxySuggestions);
-router.get('/hod-requests', hodOnly, getHodRequests);
-router.put('/update-status/:requestId', hodOnly, updateProxyStatus);
+
+// Direct-to-faculty proxy flow. Requests no longer pass through an HOD.
+router.get('/incoming-requests', teacherOnly, getIncomingProxyRequests);
+router.get('/notifications', teacherOnly, getProxyNotifications);
+router.put('/notifications/read', teacherOnly, markProxyNotificationsRead);
+router.put('/incoming-requests/:requestId/respond', teacherOnly, respondToProxyRequest);
 
 module.exports = router;
-

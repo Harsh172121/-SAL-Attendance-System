@@ -254,7 +254,7 @@ const ManageLectureSlots = () => {
         date: proxyForm.date,
         reason: proxyForm.reason?.trim() || undefined
       });
-      toast.success('Proxy request sent for HOD approval');
+      toast.success('Proxy request sent to the selected faculty');
       setShowProxyModal(false);
       await loadData();
     } catch (error) {
@@ -538,7 +538,7 @@ const ManageLectureSlots = () => {
 
       <Card title="Assigned Proxy Lectures">
         {myProxyLectures.length === 0 ? (
-          <p className="text-sm text-gray-500">No approved proxy lectures assigned to you.</p>
+          <p className="text-sm text-gray-500">No proxy lectures assigned to you.</p>
         ) : (
           <div className="space-y-3">
             {myProxyLectures.map((row) => (

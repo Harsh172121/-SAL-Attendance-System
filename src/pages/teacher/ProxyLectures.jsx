@@ -38,7 +38,7 @@ const ProxyLectures = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Assigned Proxy Lectures</h1>
-        <p className="text-gray-600">Lectures delegated to you after HOD approval.</p>
+        <p className="text-gray-600">Lectures delegated to you by fellow faculty.</p>
       </div>
 
       <Card>

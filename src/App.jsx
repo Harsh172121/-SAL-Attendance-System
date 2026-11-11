@@ -38,7 +38,7 @@ import {
   StartAttendance,
   LeaveRequests,
   ProxyRequests,
-  ProxyApprovals,
+  ProxyIncoming,
   ProxyLectures,
   TeacherTimetable,
   // Student pages
@@ -101,7 +101,7 @@ function App() {
             <Route path="start-attendance" element={<StartAttendance />} />
             <Route path="leave-requests" element={<LeaveRequests />} />
             <Route path="proxy-requests" element={<ProxyRequests />} />
-            <Route path="proxy-approvals" element={<ProxyApprovals />} />
+            <Route path="proxy-incoming" element={<ProxyIncoming />} />
             <Route path="proxy-lectures" element={<ProxyLectures />} />
             <Route path="timetable" element={<TeacherTimetable />} />
           </Route>

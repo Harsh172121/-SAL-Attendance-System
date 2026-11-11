@@ -1,7 +1,8 @@
 /* global require, module */
 /**
  * Proxy request model.
- * Stores faculty proxy requests that require HOD mediation.
+ * Stores faculty proxy requests that are sent directly to the selected
+ * proxy faculty member for a decision. The HOD approval step was removed.
  */
 
 const { DataTypes } = require('sequelize');
@@ -57,9 +58,11 @@ function defineProxyRequest(sequelize) {
         key: 'id'
       }
     },
+    // Kept for historical rows created before the direct-to-faculty flow.
+    // New proxy requests are sent straight to proxyFacultyId and store no HOD.
     hodId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'teachers',
         key: 'id'
@@ -83,6 +86,12 @@ function defineProxyRequest(sequelize) {
       type: DataTypes.SMALLINT,
       allowNull: true,
       defaultValue: 1
+    },
+    // Null until the selected proxy faculty opens/acknowledges the request.
+    // This drives the unread badge and the sidebar notification popup.
+    proxyFacultyViewedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     tableName: 'proxy_requests',
@@ -90,6 +99,7 @@ function defineProxyRequest(sequelize) {
     indexes: [
       { fields: ['hodId', 'status'] },
       { fields: ['proxyFacultyId', 'status'] },
+      { fields: ['proxyFacultyId', 'status', 'proxyFacultyViewedAt'] },
       { fields: ['slotId', 'date'] },
       {
         unique: true,
