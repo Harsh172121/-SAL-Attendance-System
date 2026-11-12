@@ -216,3 +216,37 @@ body {
   background: var(--sal-blue);
 }
 
+/* ============================================================
+   Flowchart Animated Directional Connectors & Indicators
+   ============================================================ */
+@keyframes flow-dash {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes flow-dot {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(8px);
+    opacity: 0.2;
+  }
+}
+
+.animate-flow-dash {
+  animation: flow-dash 1.2s linear infinite;
+}
+
+.animate-flow-dot {
+  animation: flow-dot 1.5s ease-in-out infinite;
+}
+

@@ -110,129 +110,6 @@ const Icons = {
 
 export default function ProjectDemo() {
   // ============================================================================
-  // FLOWCHART STATE & AUTOMATION
-  // ============================================================================
-  const [activeStep, setActiveStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-
-  const flowchartSteps = [
-    {
-      id: 'step-1',
-      number: '01',
-      nodeTag: 'AUTHENTICATION',
-      title: 'User Login & Authentication',
-      role: 'All Users (Admin, Teacher, Student)',
-      badge: 'Security & Entry',
-      icon: Icons.Login,
-      summary: 'Users enter email, password, and select their role at the common login portal.',
-      details:
-        'A single unified login endpoint verifies identity using encrypted passwords (bcrypt) and issues HTTP-only JWT sessions. The routing engine checks the user role (Admin, Teacher, or Student) and redirects them directly to their tailored dashboard.',
-      technical: 'JWT HTTP-Only Cookies • Role-Based Access Control (RBAC) • Strict Route Guards',
-      actionTitle: 'Authentication Protocol',
-      meta: 'Common login endpoint: /api/auth/login',
-    },
-    {
-      id: 'step-2',
-      number: '02',
-      nodeTag: 'ADMIN DASHBOARD',
-      title: 'Admin Management: Teachers, Students, Batches & Timetables',
-      role: 'Administrator & HOD',
-      badge: 'Academic Core',
-      icon: Icons.Shield,
-      summary: 'Admins structure college departments, batches, classes, subjects, classrooms, and teachers.',
-      details:
-        'Administrators configure academic foundations: creating classes, dividing student cohorts into lab batches (e.g. Batch A, B, C), assigning theory and lab faculty to subjects, and importing hundreds of student records in seconds via CSV or XML.',
-      technical: 'Dynamic Subject Types (Theory / Lab / Combined) • CSV/XML Parser • Batch Partitioning',
-      actionTitle: 'Administration Hub',
-      meta: 'Full CRUD on Classes, Batches, Subjects, Classrooms & Users',
-    },
-    {
-      id: 'step-3',
-      number: '03',
-      nodeTag: 'TEACHER DASHBOARD',
-      title: 'Teacher Attendance Management & Proxy Lectures',
-      role: 'Teachers & Faculty',
-      badge: 'Session Preparation',
-      icon: Icons.Clock,
-      summary: 'Teachers organize daily lecture slots, handle proxy requests, and initiate roll calls.',
-      details:
-        'Teachers create daily lecture slots mapped to college classrooms and assigned subjects. If a faculty member is taking leave, they dispatch a direct peer-to-peer proxy request to an available colleague who gets an instant notification and can accept/decline.',
-      technical: 'Direct Peer Proxy Routing • Slot Collision Avoidance • Classroom Allocation',
-      actionTitle: 'Session Scheduler',
-      meta: 'Real-time proxy notifications with 1-click Accept / Decline',
-    },
-    {
-      id: 'step-4',
-      number: '04',
-      nodeTag: 'ROLL CALL ENGINE',
-      title: 'Attendance Marking (Theory by Class, Lab by Batch)',
-      role: 'Teachers in Classroom / Lab',
-      badge: 'Live Session Execution',
-      icon: Icons.UserCheck,
-      summary: 'Teachers record present or absent students with 1-click controls in under 60 seconds.',
-      details:
-        'For theory sessions, the entire class muster is loaded. For lab sessions, only the selected batch students are displayed. Teachers toggle attendance with visual color codes, review counts, and submit. The system enforces duplicate prevention on the same slot.',
-      technical: 'Theory (Class) vs Lab (Batch) Filtering • Duplicate Slot Check • Same-Day Editing',
-      actionTitle: 'Interactive Roll Call',
-      meta: 'Mark full class in under 60 seconds with 1-click toggles',
-    },
-    {
-      id: 'step-5',
-      number: '05',
-      nodeTag: 'DATABASE STORAGE',
-      title: 'Attendance Submission & Database Storage',
-      role: 'PostgreSQL & Sequelize Engine',
-      badge: 'Data Integrity',
-      icon: Icons.Database,
-      summary: 'Attendance is securely committed to PostgreSQL with immutable audit metadata.',
-      details:
-        'Each attendance record links student ID, teacher ID (including proxy teacher tag if applicable), slot ID, subject ID, date, and status. Foreign-key relationships guarantee relational integrity and prevent orphaned or duplicate records.',
-      technical: 'PostgreSQL Relational DB • Sequelize ORM v6 • Indexed Timestamps & Foreign Keys',
-      actionTitle: 'Database Persistence',
-      meta: 'ACID Transactions & Strict Schema Constraints',
-    },
-    {
-      id: 'step-6',
-      number: '06',
-      nodeTag: 'STUDENT DASHBOARD',
-      title: 'Student Attendance Viewing & Self-Service',
-      role: 'Students & Parents',
-      badge: 'Student Transparency',
-      icon: Icons.Academic,
-      summary: 'Students monitor attendance percentages, subject breakdowns, and apply for leaves.',
-      details:
-        'Students log in from their phones or laptops to view live attendance percentages, color-coded eligibility warnings (safe ≥ 75%, detention risk < 75%), monthly attendance calendars, and submit medical or personal leave requests with dates and reasons.',
-      technical: 'Automated % Computation • Subject-Wise Theory/Lab Split • Leave Application Engine',
-      actionTitle: 'Student Dashboard',
-      meta: '24/7 Real-Time Transparency with 75% Threshold Alerts',
-    },
-    {
-      id: 'step-7',
-      number: '07',
-      nodeTag: 'AUDIT & REPORTS',
-      title: 'Attendance Reports & Tracking',
-      role: 'Admin, HODs & Examination Office',
-      badge: 'Institutional Insights',
-      icon: Icons.Chart,
-      summary: 'Automated aggregate reports for exam hall tickets, detention lists, and audits.',
-      details:
-        'Eliminates weeks of end-of-semester paperwork. Admins generate class-wise reports, filter students with attendance below mandatory university criteria (75%), track teacher slot completion, and verify proxy lectures for academic compliance.',
-      technical: 'Filtered Range Aggregation • Examination Detainee Detection • Exportable Logs',
-      actionTitle: 'Institutional Intelligence',
-      meta: 'Instant exam eligibility lists without manual math errors',
-    },
-  ];
-
-  // Auto-play stepper for flowchart
-  useEffect(() => {
-    if (!isPlaying) return;
-    const timer = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % flowchartSteps.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [isPlaying, flowchartSteps.length]);
-
-  // ============================================================================
   // INTERACTIVE SANDBOX DEMO 1: TEACHER ATTENDANCE MARKER
   // ============================================================================
   const [demoSessionType, setDemoSessionType] = useState('theory'); // 'theory' | 'lab'
@@ -400,7 +277,7 @@ export default function ProjectDemo() {
           <div className="text-center max-w-3xl mx-auto">
             {/* College Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-700 text-slate-300 text-xs sm:text-sm font-medium mb-6 shadow-md backdrop-blur-sm">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping" />
               <span>Official Academic Automation Project</span>
               <span className="text-slate-500">•</span>
               <span className="text-blue-400 font-semibold">SAL Education Campus</span>
@@ -451,7 +328,7 @@ export default function ProjectDemo() {
               </div>
               <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xs">
                 <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">100%</div>
-                <div className="text-xs text-slate-400 mt-1">Paperless & Cloud Stored</div>
+                <div className="text-xs text-slate-400 mt-1">Paperless &amp; Cloud Stored</div>
               </div>
               <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-xs">
                 <div className="text-2xl sm:text-3xl font-extrabold text-teal-400">75% Alert</div>
@@ -469,7 +346,7 @@ export default function ProjectDemo() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs uppercase tracking-widest font-bold text-green-400">
-              Purpose & Problem Solving
+              Purpose &amp; Problem Solving
             </span>
             <h2 className="text-3xl font-bold text-white mt-2">
               Transforming Campus Attendance
@@ -560,7 +437,7 @@ export default function ProjectDemo() {
               Campus Stakeholder Experience
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
-              Empowering Students, Faculty & Administrators
+              Empowering Students, Faculty &amp; Administrators
             </h2>
             <p className="text-slate-400 mt-3 text-base">
               A single unified architecture customized to serve the unique daily academic responsibilities of every campus user.
@@ -671,386 +548,430 @@ export default function ProjectDemo() {
       </section>
 
       {/* ===================================================================== */}
-      {/* SECTION 2: INTERACTIVE SYSTEM FLOWCHART (ANIMATED)                    */}
+      {/* SECTION 2: SIMPLIFIED SYSTEM WORKING FLOW (COMPACT FLOWCHART)         */}
       {/* ===================================================================== */}
-      <section id="flowchart" className="py-20 lg:py-28 relative bg-slate-900/50 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="flowchart" className="py-16 lg:py-24 relative bg-slate-900/60 border-t border-slate-800">
+        {/* SVG Marker Definitions for Directional Flowchart Arrows */}
+        <svg className="absolute w-0 h-0" aria-hidden="true" focusable="false">
+          <defs>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#3b82f6" />
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+            </marker>
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#a855f7" />
+            </marker>
+            <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+            </marker>
+            <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#06b6d4" />
+            </marker>
+          </defs>
+        </svg>
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/70 border border-blue-700/60 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
-              <span>Animated Workflow Visualizer</span>
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+              <span>Simple Visual Flowchart</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
               Interactive System Working Flow
             </h2>
-            <p className="text-slate-400 mt-3 text-base">
-              A visually intuitive, end-to-end flowchart explaining how data moves through every stage of the
-              SAL Attendance System. Click any node or follow the live data flow animation.
+            <p className="text-slate-300 mt-2.5 text-sm sm:text-base leading-relaxed">
+              Understand how attendance moves through the system in seconds. From single login to live reports and exam clearance.
             </p>
 
-            {/* Flow Controls (Play/Pause, Step Next/Prev) */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsPlaying(!isPlaying)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                  isPlaying
-                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/50 hover:bg-amber-600/50'
-                    : 'bg-green-600 text-white hover:bg-green-500 shadow-md'
-                }`}
-              >
-                {isPlaying ? <Icons.Pause /> : <Icons.Play />}
-                <span>{isPlaying ? 'Pause Auto-Play' : 'Start Auto-Play'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveStep((prev) => (prev > 0 ? prev - 1 : flowchartSteps.length - 1))}
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Icons.ArrowLeft />
-                <span>Previous Step</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveStep((prev) => (prev + 1) % flowchartSteps.length)}
-                className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>Next Step</span>
-                <Icons.ArrowRight />
-              </button>
+            {/* Quick Role Legend */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300">
+                <span className="w-2 h-2 rounded-full bg-purple-400" /> Admin (Setup)
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-950/60 border border-sky-500/40 text-sky-300">
+                <span className="w-2 h-2 rounded-full bg-sky-400" /> Teacher (Roll Call)
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300">
+                <span className="w-2 h-2 rounded-full bg-amber-400" /> Student (Live %)
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" /> Database (Storage)
+              </span>
             </div>
           </div>
 
-          {/* ================================================================= */}
-          {/* VISUAL ARCHITECTURE FLOW DIAGRAM (GRAPHICAL NODES + LINES)       */}
-          {/* ================================================================= */}
-          <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-slate-950 border border-slate-800/90 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800/80">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping" />
-                <span>End-to-End System Architecture Diagram</span>
+          {/* Flowchart Diagram Container */}
+          <div className="bg-slate-950/70 border border-slate-800 rounded-3xl p-4 sm:p-7 shadow-2xl relative">
+            
+            {/* START TERMINATOR */}
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 text-xs font-bold tracking-wide shadow-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>START &bull; User Enters SAL Attendance Portal</span>
               </div>
-              <span className="text-xs text-blue-400 font-mono hidden sm:inline">
-                Click any node to inspect details
+            </div>
+
+            {/* CONNECTOR 1 */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-6 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 24">
+                  <line x1="12" y1="0" x2="12" y2="20" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-blue)" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-medium text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
+                Enter Credentials
               </span>
             </div>
 
-            {/* Flow Graph Nodes */}
-            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center relative z-10">
-              {flowchartSteps.map((step, idx) => {
-                const isCurrent = activeStep === idx;
-                const StepIcon = step.icon;
-                return (
-                  <div
-                    key={step.id}
-                    onClick={() => {
-                      setActiveStep(idx);
-                      setIsPlaying(false);
-                    }}
-                    className={`relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col items-center justify-between min-h-[140px] ${
-                      isCurrent
-                        ? 'bg-blue-900/40 border-blue-500 ring-2 ring-blue-400/80 shadow-lg shadow-blue-950 scale-105'
-                        : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
-                    }`}
-                  >
-                    {/* Node Header */}
-                    <div className="w-full flex items-center justify-between mb-2">
-                      <span
-                        className={`text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded ${
-                          isCurrent ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {step.number}
+            {/* STEP 1: SINGLE LOGIN PAGE */}
+            <div className="max-w-md mx-auto">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/90 border border-blue-500/30 shadow-lg hover:border-blue-500/60 transition-all text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
+                  <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                    <Icons.Login />
+                  </div>
+                  <h3 className="text-base font-bold text-white">1. Secure Login Page</h3>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Single entry for all users. Enter email &amp; password &mdash; system verifies credentials and automatically identifies role.
+                </p>
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                  <span className="px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 font-medium">Admin</span>
+                  <span>&bull;</span>
+                  <span className="px-2 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800/60 font-medium">Teacher</span>
+                  <span>&bull;</span>
+                  <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60 font-medium">Student</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CONNECTOR 2 */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-7 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 28">
+                  <line x1="12" y1="0" x2="12" y2="24" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-blue)" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-medium text-slate-300 bg-slate-900 border border-slate-700/80 px-2.5 py-0.5 rounded-full shadow-sm">
+                Choose Your Role &amp; Open Dashboard ➔
+              </span>
+            </div>
+
+            {/* STEP 2: ROLE-BASED DASHBOARDS (3 CONNECTED BRANCHES) */}
+            <div>
+              <div className="text-center mb-2">
+                <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">
+                  2. Role-Based Dashboards &amp; Operations
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Admin Branch */}
+                <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/30 hover:border-purple-500/60 transition-all flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                        <Icons.Shield />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Admin Portal</h4>
+                        <span className="text-[10px] text-purple-300 uppercase tracking-wider font-semibold">System Setup</span>
+                      </div>
+                    </div>
+                    <ul className="text-xs text-slate-300 space-y-1.5">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-purple-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Creates subjects, semesters &amp; timetables.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-purple-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Assigns teachers &amp; divides student batches (A, B, C).</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-purple-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Generates college-wide attendance reports.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-purple-800/40 text-[11px] font-medium text-purple-300/80 flex items-center justify-between">
+                    <span>Configures Schedules</span>
+                    <span className="text-purple-400 font-bold">➔</span>
+                  </div>
+                </div>
+
+                {/* Teacher Branch (Main Execution Path) */}
+                <div className="p-3.5 rounded-xl bg-sky-950/20 border-2 border-sky-500/50 shadow-md shadow-sky-950/40 hover:border-sky-400 transition-all flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+                          <Icons.UserCheck />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">Teacher Portal</h4>
+                          <span className="text-[10px] text-sky-300 uppercase tracking-wider font-semibold">Active Roll Call</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/40">
+                        Primary Flow
                       </span>
-                      {isCurrent && (
-                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                      )}
                     </div>
-
-                    {/* Icon */}
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                        isCurrent
-                          ? 'bg-blue-500 text-white shadow-md'
-                          : 'bg-slate-800 text-slate-300'
-                      }`}
-                    >
-                      <StepIcon />
-                    </div>
-
-                    {/* Title */}
-                    <div className="mt-2">
-                      <div
-                        className={`text-[11px] font-bold leading-tight ${
-                          isCurrent ? 'text-white' : 'text-slate-300'
-                        }`}
-                      >
-                        {step.nodeTag}
-                      </div>
-                      <div className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">
-                        {step.role.split('(')[0]}
-                      </div>
-                    </div>
+                    <ul className="text-xs text-slate-300 space-y-1.5">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-sky-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Views scheduled daily theory &amp; lab slots.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-sky-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Takes roll call in under 60 seconds with 1 click.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-sky-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Assigns proxy lectures to peers if on leave.</span>
+                      </li>
+                    </ul>
                   </div>
-                );
-              })}
+                  <div className="mt-3 pt-2 border-t border-sky-800/40 text-[11px] font-semibold text-sky-300 flex items-center justify-between">
+                    <span>Marks Today's Attendance</span>
+                    <span className="text-sky-400 font-bold">➔</span>
+                  </div>
+                </div>
+
+                {/* Student Branch */}
+                <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/30 hover:border-amber-500/60 transition-all flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                        <Icons.Academic />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Student Portal</h4>
+                        <span className="text-[10px] text-amber-300 uppercase tracking-wider font-semibold">Self-Service</span>
+                      </div>
+                    </div>
+                    <ul className="text-xs text-slate-300 space-y-1.5">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-amber-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Checks live attendance % per subject.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-amber-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Instant alerts if attendance drops below 75%.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-amber-400 mt-0.5 font-bold">&bull;</span>
+                        <span>Views timetable and submits leave requests.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-amber-800/40 text-[11px] font-medium text-amber-300/80 flex items-center justify-between">
+                    <span>Monitors Live Attendance</span>
+                    <span className="text-amber-400 font-bold">➔</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Connecting visual pipeline banner */}
-            <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-center gap-3 text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">Data Pipeline Flow:</span>
-              <span className="hidden sm:inline font-mono text-[11px] text-green-400">
-                Login ➔ Role Dashboard ➔ Slot Preparation ➔ Muster Roll ➔ PostgreSQL ACID Commit ➔ Live Student % ➔ Examination Clearance
+            {/* CONNECTOR 3 */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-7 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 28">
+                  <line x1="12" y1="0" x2="12" y2="24" stroke="#0284c7" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-cyan)" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-medium text-sky-300 bg-slate-900 border border-sky-700/60 px-2.5 py-0.5 rounded-full shadow-sm">
+                Teacher Marks Roll Call ➔
               </span>
             </div>
-          </div>
 
-          {/* Stepper Navigation Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar mb-8 justify-start lg:justify-center">
-            {flowchartSteps.map((step, idx) => {
-              const isActive = activeStep === idx;
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveStep(idx);
-                    setIsPlaying(false);
-                  }}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all duration-300 cursor-pointer ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50 ring-2 ring-blue-400 scale-105'
-                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                      isActive ? 'bg-white text-blue-900' : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {step.number}
+            {/* STEP 3: MANAGE ATTENDANCE (THEORY VS LAB) */}
+            <div className="max-w-2xl mx-auto">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/90 border border-sky-500/40 shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+                      <Icons.Calendar />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white">3. Manage &amp; Mark Attendance</h3>
+                      <p className="text-xs text-slate-300">Teacher selects slot type and marks present or absent</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-semibold">
+                    &lt; 60 Seconds
                   </span>
-                  <span>{step.title.split('&')[0].trim()}</span>
-                </button>
-              );
-            })}
-          </div>
+                </div>
 
-          {/* Flow Visualizer Box */}
-          <div className="grid lg:grid-cols-12 gap-8 items-center bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
-            {/* Background animated particle glow */}
-            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Left Column: Active Step Deep Dive */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-950 text-blue-400 border border-blue-800">
-                  Step {flowchartSteps[activeStep].number} of 07
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                  {flowchartSteps[activeStep].badge}
-                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2.5 pt-2.5 border-t border-slate-800">
+                  <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300 mb-1">
+                      <span>📖</span>
+                      <span>Theory Lecture Session</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Loads complete classroom roster for the semester. 1-click &ldquo;Mark All Present&rdquo; and toggle absentees quickly.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-teal-300 mb-1">
+                      <span>🔬</span>
+                      <span>Lab Practical Session</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Filters automatically by Batch (Batch A, B, or C). Only students in the current lab batch appear on the screen.
+                    </p>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-                {flowchartSteps[activeStep].title}
-              </h3>
-
-              <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-300 text-sm">
-                <span className="font-semibold text-blue-400">Primary Role: </span>
-                {flowchartSteps[activeStep].role}
+            {/* CONNECTOR 4 */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-7 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 28">
+                  <line x1="12" y1="0" x2="12" y2="24" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-green)" />
+                </svg>
               </div>
+              <span className="text-[11px] font-medium text-emerald-300 bg-slate-900 border border-emerald-700/60 px-2.5 py-0.5 rounded-full shadow-sm">
+                Save &amp; Verify Record ➔
+              </span>
+            </div>
 
-              <p className="text-slate-300 text-base leading-relaxed">
-                {flowchartSteps[activeStep].details}
+            {/* STEP 4: SAVE IN DATABASE (AUTO DUPLICATE CHECK) */}
+            <div className="max-w-2xl mx-auto">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/90 border border-emerald-500/40 shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Icons.Database />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white">4. Save Attendance in Database</h3>
+                    <p className="text-xs text-slate-300">Secure PostgreSQL storage with automated validation</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-800 text-xs">
+                  <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30">
+                    <div className="font-semibold text-emerald-300 text-[11px] flex items-center gap-1">
+                      <span>🛡️</span> Prevents Duplicates
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      Blocks recording attendance twice for the same slot on the same day.
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30">
+                    <div className="font-semibold text-emerald-300 text-[11px] flex items-center gap-1">
+                      <span>✏️</span> Safe Updates
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      If a teacher corrects a mistake, the record updates seamlessly without extra rows.
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30">
+                    <div className="font-semibold text-emerald-300 text-[11px] flex items-center gap-1">
+                      <span>⚡</span> Instant Percentage
+                    </div>
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      Recalculates attended lectures and overall % immediately in real time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CONNECTOR 5 */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-7 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 28">
+                  <line x1="12" y1="0" x2="12" y2="24" stroke="#a855f7" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-purple)" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-medium text-slate-300 bg-slate-900 border border-slate-700/80 px-2.5 py-0.5 rounded-full shadow-sm">
+                View Attendance &amp; Live Reports ➔
+              </span>
+            </div>
+
+            {/* STEP 5: VIEW ATTENDANCE & LIVE REPORTS (STUDENT & COLLEGE OUTCOMES) */}
+            <div className="max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* For Students */}
+                <div className="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/40 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                      <Icons.Chart />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Student: Live Attendance %</h4>
+                      <span className="text-[10px] text-amber-300 font-semibold">Immediate Visibility</span>
+                    </div>
+                  </div>
+                  <ul className="text-xs text-slate-300 space-y-1.5">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-400 font-bold">&bull;</span>
+                      <span><strong>&ge; 75% Safe:</strong> Marked eligible for final exam hall ticket.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-red-400 font-bold">&bull;</span>
+                      <span><strong>&lt; 75% Warning:</strong> Automated alert shows classes needed to recover.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-400 font-bold">&bull;</span>
+                      <span><strong>Full History:</strong> Students can verify every single lecture date.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* For Admin & College */}
+                <div className="p-3.5 rounded-xl bg-slate-900/90 border border-purple-500/40 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                      <Icons.FileText />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">College: Reports &amp; Clearance</h4>
+                      <span className="text-[10px] text-purple-300 font-semibold">Admin &amp; HOD Oversight</span>
+                    </div>
+                  </div>
+                  <ul className="text-xs text-slate-300 space-y-1.5">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-400 font-bold">&bull;</span>
+                      <span><strong>Instant Defaulter Lists:</strong> 1-click export of students below 75%.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-400 font-bold">&bull;</span>
+                      <span><strong>Hall Ticket Approvals:</strong> Clear audit trail for exam eligibility.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-400 font-bold">&bull;</span>
+                      <span><strong>Teacher Accountability:</strong> Timestamped record of who marked each session.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* CONNECTOR TO END */}
+            <div className="flex flex-col items-center my-2">
+              <div className="h-6 w-0.5 relative flex items-center justify-center">
+                <svg className="h-full w-6 overflow-visible" viewBox="0 0 24 24">
+                  <line x1="12" y1="0" x2="12" y2="20" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" className="animate-flow-dash" markerEnd="url(#arrow-green)" />
+                </svg>
+              </div>
+            </div>
+
+            {/* END TERMINATOR */}
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-950 border-2 border-emerald-500 text-emerald-300 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-950/60">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                <span>✓ END &bull; Academic Compliance &amp; Examination Clearance Approved</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Fast, reliable, 100% paperless attendance lifecycle from daily roll call to final examinations.
               </p>
-
-              {/* Technical Footprint & Meta */}
-              <div className="pt-4 border-t border-slate-800/90 grid sm:grid-cols-2 gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                    Technical Mechanism
-                  </span>
-                  <p className="text-slate-200 font-mono bg-slate-950 p-2 rounded-lg border border-slate-800">
-                    {flowchartSteps[activeStep].technical}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-slate-400 uppercase tracking-wider font-semibold">
-                    System Impact
-                  </span>
-                  <p className="text-emerald-400 font-medium bg-slate-950 p-2 rounded-lg border border-slate-800">
-                    {flowchartSteps[activeStep].meta}
-                  </p>
-                </div>
-              </div>
             </div>
 
-            {/* Right Column: Interactive Step Visual Representation */}
-            <div className="lg:col-span-5 bg-slate-950 rounded-2xl p-6 border border-slate-800 shadow-inner space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-xs font-mono text-slate-400">Live Stage Preview</span>
-                </div>
-                <span className="text-xs font-mono text-blue-400">
-                  SAL-WORKFLOW: STAGE-0{activeStep + 1}
-                </span>
-              </div>
-
-              {/* Dynamic simulation preview box based on active step */}
-              {activeStep === 0 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">User Login & Authentication</div>
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-mono">admin@sal.edu</span>
-                      <span className="text-purple-400 font-mono font-bold">➔ /admin/dashboard</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-mono">teacher@sal.edu</span>
-                      <span className="text-blue-400 font-mono font-bold">➔ /teacher/dashboard</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-mono">student@sal.edu</span>
-                      <span className="text-green-400 font-mono font-bold">➔ /student/dashboard</span>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-400 text-center">
-                    Bcrypt hashed verification • Cookie-stored JWT session
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 1 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">Admin Management Catalog</div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">CLASSES & BATCHES</div>
-                      <div className="font-bold text-white mt-1">Computer Eng.</div>
-                      <div className="text-blue-400 text-[11px]">Batch A, B, C</div>
-                    </div>
-                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">BULK ONBOARDING</div>
-                      <div className="font-bold text-white mt-1">CSV & XML</div>
-                      <div className="text-emerald-400 text-[11px]">Validated Ingestion</div>
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 text-xs">
-                    <span className="text-slate-400">Dynamic Subjects: </span>
-                    <span className="text-white font-medium">Theory Only, Lab Only, or Both with separate faculty assignments.</span>
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 2 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">Teacher Slots & Proxy Handshake</div>
-                  <div className="p-3 bg-blue-950/40 rounded-xl border border-blue-800/40 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300 font-medium">Slot #3: 11:30 - 12:30</span>
-                      <span className="px-2 py-0.5 rounded-full bg-blue-900 text-blue-300 font-mono text-[10px]">Classroom 302</span>
-                    </div>
-                    <div className="text-slate-400 text-[11px]">Subject: Operating Systems (Theory)</div>
-                    <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
-                      <span className="text-amber-400">Faculty Proxy: Prof. Trivedi</span>
-                      <span className="text-green-400 font-bold">Approved ✓</span>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Direct peer dispatch ensures no lecture is missed when staff are on leave.
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 3 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">Roll Call Execution (Theory / Lab)</div>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between p-2 bg-slate-900 rounded-lg border border-slate-800">
-                      <span className="text-slate-200">101 - Aarav Patel</span>
-                      <span className="px-2 py-0.5 rounded-md bg-green-950 text-green-400 font-bold border border-green-800">Present</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-slate-900 rounded-lg border border-slate-800">
-                      <span className="text-slate-200">102 - Diya Shah</span>
-                      <span className="px-2 py-0.5 rounded-md bg-green-950 text-green-400 font-bold border border-green-800">Present</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-slate-900 rounded-lg border border-slate-800">
-                      <span className="text-slate-200">103 - Rohan Mehta</span>
-                      <span className="px-2 py-0.5 rounded-md bg-red-950 text-red-400 font-bold border border-red-800">Absent</span>
-                    </div>
-                  </div>
-                  <div className="text-center text-[11px] text-emerald-400 font-medium">
-                    Enforces unique attendance keys per session slot to prevent duplication.
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 4 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">PostgreSQL Relational Commit</div>
-                  <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-blue-300 space-y-1">
-                    <div>BEGIN TRANSACTION;</div>
-                    <div className="text-emerald-400 pl-3">INSERT INTO "attendance" (...)</div>
-                    <div className="text-emerald-400 pl-3">VALUES (slot_id=42, status='P');</div>
-                    <div>COMMIT;</div>
-                  </div>
-                  <div className="text-xs text-slate-400 flex items-center justify-between">
-                    <span>Database: PostgreSQL 16</span>
-                    <span className="text-green-400 font-semibold">Status: Committed</span>
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 5 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">Student Visibility Portal</div>
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-white">Overall Attendance</span>
-                      <span className="text-sm font-extrabold text-green-400">84.2%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                      <div className="bg-green-500 h-full w-[84.2%]" />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Threshold: 75.0%</span>
-                      <span className="text-green-400 font-semibold">Eligible for University Exam</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 6 && (
-                <div className="space-y-3 py-2">
-                  <div className="text-xs font-semibold text-slate-300">Institutional Exam Eligibility List</div>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 flex justify-between">
-                      <span className="text-slate-300">Aarav Patel (CE-4A)</span>
-                      <span className="text-green-400 font-bold">88.5% • Allowed</span>
-                    </div>
-                    <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 flex justify-between">
-                      <span className="text-slate-300">Rohan Mehta (CE-4A)</span>
-                      <span className="text-red-400 font-bold">62.0% • Notice Issued</span>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-400 text-center">
-                    Instant reports generated for HOD, Dean & Exam Controller.
-                  </div>
-                </div>
-              )}
-
-              {/* Step indicator footer */}
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span>Progress: {activeStep + 1} / {flowchartSteps.length}</span>
-                <span className="font-semibold text-blue-400 cursor-pointer" onClick={() => setActiveStep((prev) => (prev + 1) % flowchartSteps.length)}>
-                  Advance to next ➔
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -1458,7 +1379,7 @@ export default function ProjectDemo() {
               <div className="w-12 h-12 rounded-xl bg-green-900/40 text-green-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Icons.UserCheck />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Theory & Lab Engine</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Theory &amp; Lab Engine</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
                 Seamless support for class-level theory lectures and batch-specific practical labs with separate faculty assignments.
               </p>
@@ -1540,10 +1461,10 @@ export default function ProjectDemo() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs uppercase tracking-widest font-bold text-green-400">
-              Project Value & Outcomes
+              Project Value &amp; Outcomes
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">
-              Tangible & Intangible Benefits
+              Tangible &amp; Intangible Benefits
             </h2>
             <p className="text-slate-400 mt-3 text-base">
               A comprehensive breakdown of concrete operational improvements and positive institutional cultural shifts.
@@ -1624,7 +1545,7 @@ export default function ProjectDemo() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">Intangible Benefits</h3>
-                  <p className="text-xs text-green-400">Institutional Culture & Campus Dynamics</p>
+                  <p className="text-xs text-green-400">Institutional Culture &amp; Campus Dynamics</p>
                 </div>
               </div>
 
@@ -1672,7 +1593,7 @@ export default function ProjectDemo() {
                 <div className="flex items-start gap-3">
                   <Icons.Check />
                   <div>
-                    <h4 className="text-sm font-bold text-white">Trust & Academic Integrity</h4>
+                    <h4 className="text-sm font-bold text-white">Trust &amp; Academic Integrity</h4>
                     <p className="text-xs text-slate-400 mt-0.5">
                       Consistent enforcement of university attendance guidelines reinforces student discipline and builds trust across the institution.
                     </p>
