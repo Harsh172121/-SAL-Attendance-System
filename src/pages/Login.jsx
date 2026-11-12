@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 // Import SAL Education logo
 import salLogo from '../assets/SAL.png';
@@ -67,12 +67,18 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Logo section - centered at top */}
         <div className="text-center mb-8">
-          {/* SAL Education Logo */}
-          <img
-            src={salLogo}
-            alt="SAL Education Logo"
-            className="w-32 h-32 mx-auto mb-4 rounded-full shadow-lg bg-white p-2 object-contain"
-          />
+          {/* SAL Education Logo - Clickable to explore Project Introduction & Interactive Demo */}
+          <Link
+            to="/demo"
+            className="inline-block group cursor-pointer focus:outline-none"
+            title="Click to explore Project Introduction & Interactive Demo"
+          >
+            <img
+              src={salLogo}
+              alt="SAL Education Logo"
+              className="w-32 h-32 mx-auto mb-4 rounded-full shadow-lg bg-white p-2 object-contain transition-all duration-300 transform group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-4 group-hover:ring-green-400/80"
+            />
+          </Link>
           {/* College name */}
           <h1 className="text-3xl font-bold text-white mb-2">
             SAL Education

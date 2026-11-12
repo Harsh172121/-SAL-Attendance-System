@@ -9,6 +9,7 @@ export { default as Login } from './Login';
 export { default as Profile } from './Profile';
 export { default as Unauthorized } from './Unauthorized';
 export { default as NotFound } from './NotFound';
+export { default as ProjectDemo } from './ProjectDemo';
 
 // Admin pages
 export * from './admin';

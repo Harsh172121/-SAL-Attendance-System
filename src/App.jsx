@@ -18,6 +18,7 @@ import { Layout, ProtectedRoute } from './components';
 import {
   // Common pages
   Login,
+  ProjectDemo,
   Profile,
   Unauthorized,
   NotFound,
@@ -59,6 +60,8 @@ function App() {
         <Routes>
           {/* Public routes - accessible without authentication */}
           <Route path="/login" element={<Login />} />
+          <Route path="/demo" element={<ProjectDemo />} />
+          <Route path="/about" element={<ProjectDemo />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Root redirect - redirects to login */}
